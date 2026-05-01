@@ -1,6 +1,7 @@
 import React
 import SwiftParser
 import SwiftSyntax
+import SwiftSyntaxScope
 
 public struct RootView: Component {
 
@@ -29,7 +30,9 @@ public struct RootView: Component {
                     .input(onTextChange)
             )
 
-            SwiftSyntaxVisualizeView(syntax: Parser.parse(source: text))
+            let syntax = Parser.parse(source: text)
+            SwiftSyntaxVisualizeView(syntax: syntax)
+            SwiftSyntaxScopeVisualizeView(syntax: syntax)
         }
     }
 }
@@ -40,6 +43,18 @@ internal struct SwiftSyntaxVisualizeView: Component {
     func render() -> Node {
         div(style: .init().whiteSpace("pre-wrap")) {
             syntax.debugDescription
+        }
+    }
+}
+
+internal struct SwiftSyntaxScopeVisualizeView: Component {
+    let syntax: SourceFileSyntax
+
+    func render() -> Node {
+        div(style: .init().whiteSpace("pre-wrap")) {
+            let scope = SourceFileScope(syntax: syntax)
+            let _ = scope.buildFullyExpandedTree()
+            scope.dump()
         }
     }
 }

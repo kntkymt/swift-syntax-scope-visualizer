@@ -10,6 +10,7 @@ let package = Package(
         .package(url: "https://github.com/swiftwasm/JavaScriptKit.git", from: "0.51.0"),
         .package(url: "https://github.com/omochi/swift-react", from: "0.2.0"),
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "603.0.0"),
+        .package(url: "https://github.com/kntkymt/swift-syntax-scope.git", from: "0.0.1"),
     ],
     targets: [
         .executableTarget(
@@ -26,6 +27,7 @@ let package = Package(
                 .product(name: "React", package: "swift-react"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxScope", package: "swift-syntax-scope")
             ]
         ),
         .testTarget(

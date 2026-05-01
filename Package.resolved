@@ -1,5 +1,5 @@
 {
-  "originHash" : "ad3224bc79dcdb8897700e664c42e983c5e39290d9330c1132a74fb326976d3f",
+  "originHash" : "320b3425d00c4c26591e54252d3fa9ee33a797f183cb554d14d21084a6d0032f",
   "pins" : [
     {
       "identity" : "javascriptkit",
@@ -17,6 +17,24 @@
       "state" : {
         "revision" : "87e50f483c54e6efd60e885f7f5aa946cee68023",
         "version" : "1.2.1"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "626b5b7b2f45e1b0b1c6f4a309296d1d21d7311b",
+        "version" : "1.7.1"
+      }
+    },
+    {
+      "identity" : "swift-gsb-macro",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kntkymt/swift-gsb-macro",
+      "state" : {
+        "revision" : "628259a10c2a5544d7121986cf66501baddbe5bb",
+        "version" : "0.2.0"
       }
     },
     {
@@ -44,6 +62,15 @@
       "state" : {
         "revision" : "9de99a78f099e59caf2b2beec65a4c45d54b2081",
         "version" : "603.0.1"
+      }
+    },
+    {
+      "identity" : "swift-syntax-scope",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kntkymt/swift-syntax-scope.git",
+      "state" : {
+        "revision" : "d2a6b439e696261a1369e0146cf11d093661b314",
+        "version" : "0.0.1"
       }
     }
   ],
