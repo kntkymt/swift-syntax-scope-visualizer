@@ -1,4 +1,5 @@
 import React
+import SwiftCodeEditor
 import SwiftParser
 import SwiftSyntax
 import SwiftSyntaxScope
@@ -15,22 +16,16 @@ public struct RootView: Component {
             self.text = text
         }
 
+        let syntax = Parser.parse(source: text)
+
         return div(
             style: .init()
                 .display("flex")
                 .flexDirection("row")
+                .height("100vh")
+                .overflow("hidden")
         ) {
-            textarea(
-                attributes: .init()
-                    .rows("4")
-                    .placeholder("input your string here"),
-                style: .init()
-                    .margin("0px 16px"),
-                listeners: .init()
-                    .input(onTextChange)
-            )
-
-            let syntax = Parser.parse(source: text)
+            SwiftCodeEditor(text: text, onInput: onTextChange)
             SwiftSyntaxVisualizeView(syntax: syntax)
             SwiftSyntaxScopeVisualizeView(syntax: syntax)
         }
@@ -41,7 +36,17 @@ internal struct SwiftSyntaxVisualizeView: Component {
     let syntax: any SyntaxProtocol
 
     func render() -> Node {
-        div(style: .init().whiteSpace("pre-wrap")) {
+        div(
+            style: .init()
+                .flex("1 1 0")
+                .minWidth("0")
+                .height("100%")
+                .overflow("auto")
+                .padding("8px")
+                .borderRight("1px solid #ddd")
+                .boxSizing("border-box")
+                .whiteSpace("pre-wrap")
+        ) {
             syntax.debugDescription
         }
     }
@@ -51,7 +56,16 @@ internal struct SwiftSyntaxScopeVisualizeView: Component {
     let syntax: SourceFileSyntax
 
     func render() -> Node {
-        div(style: .init().whiteSpace("pre-wrap")) {
+        div(
+            style: .init()
+                .flex("1 1 0")
+                .minWidth("0")
+                .height("100%")
+                .overflow("auto")
+                .padding("8px")
+                .boxSizing("border-box")
+                .whiteSpace("pre-wrap")
+        ) {
             let scope = SourceFileScope(syntax: syntax)
             let _ = scope.buildFullyExpandedTree()
             scope.dump()

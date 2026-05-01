@@ -24,10 +24,17 @@ let package = Package(
         .target(
             name: "Pages",
             dependencies: [
+                "SwiftCodeEditor",
                 .product(name: "React", package: "swift-react"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxScope", package: "swift-syntax-scope")
+            ]
+        ),
+        .target(
+            name: "SwiftCodeEditor",
+            dependencies: [
+                .product(name: "React", package: "swift-react")
             ]
         ),
         .testTarget(
