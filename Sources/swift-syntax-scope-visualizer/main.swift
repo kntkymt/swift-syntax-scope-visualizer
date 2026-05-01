@@ -1,6 +1,7 @@
-import JavaScriptKit
+import SRTDOM
+import React
 
-let document = JSObject.global.document
-let div = document.createElement("div")
-div.innerText = "Hello from Swift!"
-_ = document.body.appendChild(div)
+let body = try JSWindow.global.document.body.unwrap("body")
+let root = ReactRoot(element: body)
+let content = RootView()
+root.render(node: content)

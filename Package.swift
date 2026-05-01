@@ -5,17 +5,17 @@ import PackageDescription
 
 let package = Package(
     name: "swift-syntax-scope-visualizer",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     dependencies: [
         .package(url: "https://github.com/swiftwasm/JavaScriptKit.git", from: "0.51.0"),
+        .package(url: "https://github.com/omochi/swift-react", from: "0.2.0")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
             name: "swift-syntax-scope-visualizer",
             dependencies: [
-                "JavaScriptKit"
+                "JavaScriptKit",
+                .product(name: "React", package: "swift-react")
             ]
         ),
         .testTarget(
