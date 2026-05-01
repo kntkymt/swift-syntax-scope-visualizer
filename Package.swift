@@ -8,14 +8,24 @@ let package = Package(
     platforms: [.macOS(.v14)],
     dependencies: [
         .package(url: "https://github.com/swiftwasm/JavaScriptKit.git", from: "0.51.0"),
-        .package(url: "https://github.com/omochi/swift-react", from: "0.2.0")
+        .package(url: "https://github.com/omochi/swift-react", from: "0.2.0"),
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "603.0.0"),
     ],
     targets: [
         .executableTarget(
             name: "swift-syntax-scope-visualizer",
             dependencies: [
+                "Pages",
                 "JavaScriptKit",
                 .product(name: "React", package: "swift-react")
+            ]
+        ),
+        .target(
+            name: "Pages",
+            dependencies: [
+                .product(name: "React", package: "swift-react"),
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftParser", package: "swift-syntax"),
             ]
         ),
         .testTarget(
