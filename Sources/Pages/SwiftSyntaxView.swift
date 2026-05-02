@@ -30,29 +30,7 @@ internal struct SyntaxTreeNodeView: Component {
 
     let node: SyntaxTreeNode
 
-    @State var isExpanded: Bool = true
-    @State var isHovered: Bool = false
-
     func render() -> Node {
-        let hasChildren = !node.children.isEmpty
-
-        let onToggle = EventListener { (_) in
-            self.isExpanded.toggle()
-        }
-
-        // Highlight only the deepest hovered node and its descendants by stopping the mouse event
-        // from bubbling. The descendants inherit the background through normal DOM stacking,
-        // while ancestors receive a `mouseout` and clear their highlight as the cursor enters
-        // a child.
-        let onMouseOver = EventListener { (event) in
-            _ = event.jsValue.stopPropagation()
-            self.isHovered = true
-        }
-        let onMouseOut = EventListener { (event) in
-            _ = event.jsValue.stopPropagation()
-            self.isHovered = false
-        }
-
         let typeColor: String
         switch node.kind {
         case .layout: typeColor = "#0a66c2"
@@ -60,31 +38,8 @@ internal struct SyntaxTreeNodeView: Component {
         case .token: typeColor = "#1f7a3f"
         }
 
-        return div(
-            style: .init()
-                .backgroundColor(isHovered ? "rgba(100, 149, 237, 0.25)" : "transparent"),
-            listeners: .init()
-                .mouseover(onMouseOver)
-                .mouseout(onMouseOut)
-        ) {
-            div(
-                style: .init()
-                    .display("flex")
-                    .flexDirection("row")
-                    .alignItems("baseline")
-                    .cursor(hasChildren ? "pointer" : "default")
-                    .userSelect("none"),
-                listeners: .init().click(onToggle)
-            ) {
-                span(
-                    style: .init()
-                        .display("inline-block")
-                        .width("12px")
-                        .color("#888")
-                ) {
-                    hasChildren ? (isExpanded ? "▾" : "▸") : ""
-                }
-
+        return HoverHighlight {
+            Accordion {
                 if let label = node.label {
                     span(style: .init().color("#b1591a")) {
                         "\(label): "
@@ -104,18 +59,9 @@ internal struct SyntaxTreeNodeView: Component {
                         "\"\(token)\""
                     }
                 }
-            }
-
-            if hasChildren && isExpanded {
-                div(
-                    style: .init()
-                        .paddingLeft("12px")
-                        .marginLeft("4px")
-                        .borderLeft("1px solid #eee")
-                ) {
-                    node.children.map { (child) in
-                        SyntaxTreeNodeView(node: child)
-                    }
+            } body: {
+                node.children.map { (child) in
+                    SyntaxTreeNodeView(node: child)
                 }
             }
         }
