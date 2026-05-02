@@ -7,3 +7,15 @@ internal extension Range<AbsolutePosition> {
         return "[\(lower.line):\(lower.column) - \(upper.line):\(upper.column)]"
     }
 }
+
+internal extension SyntaxProtocol {
+    var declNames: [String] {
+        if let extensionDecl = self.as(ExtensionDeclSyntax.self),
+            let identifierType = extensionDecl.extendedType.as(IdentifierTypeSyntax.self)
+        {
+            return [identifierType.name.text]
+        }
+
+        return Syntax(self).introducedNameTexts
+    }
+}

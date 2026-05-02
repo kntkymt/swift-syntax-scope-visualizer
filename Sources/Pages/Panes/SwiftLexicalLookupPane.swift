@@ -79,6 +79,16 @@ private struct SyntaxTreeNodeView: Component {
                     }
                 }
 
+                if !node.declNames.isEmpty {
+                    span(
+                        style: .init()
+                            .marginLeft("8px")
+                            .color("#666")
+                    ) {
+                        node.declNames.lazy.map { "\"\($0)\"" }.joined(separator: ", ")
+                    }
+                }
+
                 span(
                     style: .init()
                         .marginLeft("8px")
@@ -124,6 +134,7 @@ internal struct SyntaxTreeNode: Hashable {
     let scopeDebugName: String?
     let introducedNames: [String]
     let introducedNamesToParent: [String]
+    let declNames: [String]
     let children: [SyntaxTreeNode]
 }
 
@@ -190,6 +201,7 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
             scopeDebugName: scope?.scopeDebugName,
             introducedNames: introducedNames,
             introducedNamesToParent: introducedNamesToParent,
+            declNames: syntax.declNames,
             children: children
         )
     }
