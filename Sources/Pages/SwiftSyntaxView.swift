@@ -27,7 +27,11 @@ internal struct SyntaxTreeNodeView: Component {
         return HoverHighlight {
             Accordion {
                 span(style: .init().color(typeColor)) {
-                    node.typeName
+                    if let scopeDebugName = node.scopeDebugName {
+                        "\(node.typeName): \(scopeDebugName)"
+                    } else {
+                        node.typeName
+                    }
                 }
 
                 if let token = node.tokenText {
@@ -90,6 +94,7 @@ internal struct SyntaxTreeNode {
     let tokenText: String?
     let sourceRange: String
     let isScope: Bool
+    let scopeDebugName: String?
     let introducedNames: [String]
     let introducedNamesToParent: [String]
     let children: [SyntaxTreeNode]
@@ -141,7 +146,7 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
             : rawTypeName
 
         let scope = syntax.asProtocol(SyntaxProtocol.self) as? ScopeSyntax
-        let introducedNames = scope?.defaultIntroducedNames.map(\.displayText) ?? []
+        let introducedNames = scope?.lookupAtScopeEnd.map(\.displayText) ?? []
         let introducedNamesToParent = syntax.introducedNameTextsToParent
 
         let children: [SyntaxTreeNode] = childList.compactMap { (child) in
@@ -157,6 +162,7 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
             tokenText: tokenText,
             sourceRange: syntax.sourceRangeDescription(converter: converter),
             isScope: scope != nil,
+            scopeDebugName: scope?.scopeDebugName,
             introducedNames: introducedNames,
             introducedNamesToParent: introducedNamesToParent,
             children: children
@@ -168,11 +174,8 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
 
 private extension SyntaxProtocol {
     func sourceRangeDescription(converter: SourceLocationConverter) -> String {
-        let range = trimmedRange
-        let lowerBound = converter.location(for: range.lowerBound)
-        let upperBound = converter.location(for: range.displayedUpperBound)
-
-        return "[\(lowerBound.line):\(lowerBound.column) - \(upperBound.line):\(upperBound.column)]"
+        let range = sourceRange(converter: converter)
+        return "[\(range.start.line):\(range.start.column) - \(range.end.line):\(range.end.column)]"
     }
 }
 
@@ -194,6 +197,36 @@ private extension LookupName {
         default:
             return identifier.name
         }
+    }
+}
+
+private extension ScopeSyntax {
+    // Run lookup at the scope's end with `finishInSequentialScope: true` so a
+    // SequentialScopeSyntax (CodeBlock / SourceFile / ...) folds in names from
+    // `IntroducingToSequentialParentScopeSyntax` children (e.g. `guard let`).
+    // `LookupConfig` has no way to suppress parent-scope walking, so scopes that
+    // delegate via `lookupInParent` (VariableDeclScope, MacroDeclScope, ...) leak
+    // ancestor names. Drop results whose scope isn't this scope or its descendant.
+    var lookupAtScopeEnd: [LookupName] {
+        let position = trimmedRange.displayedUpperBound
+        let config = LookupConfig(finishInSequentialScope: true)
+        let ownId = Syntax(self).id
+
+        return lookup(nil, at: position, with: config)
+            .filter { Syntax($0.scope).isSelfOrDescendant(of: ownId) }
+            .flatMap(\.names)
+            .sorted { $0.position < $1.position }
+    }
+}
+
+private extension Syntax {
+    func isSelfOrDescendant(of ancestorID: SyntaxIdentifier) -> Bool {
+        var current: Syntax? = self
+        while let node = current {
+            if node.id == ancestorID { return true }
+            current = node.parent
+        }
+        return false
     }
 }
 

@@ -128,6 +128,34 @@ import SwiftSyntax
         #expect(identifierToken.introducedNames.isEmpty)
     }
 
+    @Test func variableDeclScopeDoesNotLeakAncestorNames() {
+        let syntax = Parser.parse(source: """
+            class C {
+                let outer = 1
+                var x: Int { 0 }
+            }
+            """)
+        let root = buildSyntaxTree(from: syntax)!
+        let varDecl = find(in: root, typeName: "VariableDecl")!
+
+        #expect(varDecl.isScope)
+        #expect(varDecl.introducedNames.isEmpty)
+    }
+
+    @Test func codeBlockFoldsGuardLetIntoIntroducedNames() {
+        let syntax = Parser.parse(source: """
+            func f() {
+                let a = 1
+                guard let b = 10 else { return }
+                let c = 1
+            }
+            """)
+        let root = buildSyntaxTree(from: syntax)!
+        let codeBlock = find(in: root, typeName: "CodeBlock")!
+
+        #expect(codeBlock.introducedNames == ["a", "b", "c"])
+    }
+
     @Test func guardStmtIntroducesBindingsToParent() {
         let syntax = Parser.parse(source: """
             func f(opt: Int?) {
@@ -169,7 +197,7 @@ import SwiftSyntax
         let syntax = Parser.parse(source: "let x = 1")
         let root = buildSyntaxTree(from: syntax)!
 
-        #expect(root.sourceRange == "[1:1 - 1:9]")
+        #expect(root.sourceRange == "[1:1 - 1:10]")
     }
 
     @Test func nodeIdsAreUnique() {
