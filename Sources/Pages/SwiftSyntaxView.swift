@@ -8,7 +8,7 @@ internal struct SwiftSyntaxView: Component {
     func render() -> Node {
         let root = buildSyntaxTree(from: syntax)
 
-        return Pane {
+        return Pane(title: "Swift Lexical Lookup") {
             if let root {
                 SyntaxTreeNodeView(node: root)
             }

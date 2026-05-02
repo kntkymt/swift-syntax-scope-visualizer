@@ -9,7 +9,7 @@ internal struct SwiftSyntaxScopeVisualizeView: Component {
         let scope = SourceFileScope(syntax: syntax)
         scope.buildFullyExpandedTree()
 
-        return Pane(showRightBorder: false) {
+        return Pane(title: "Swift Syntax Scope (referencing swift compiler)", showRightBorder: false) {
             ScopeTreeNodeView(scope: scope)
         }
     }

@@ -39,7 +39,7 @@ public struct RootView: Component {
                 .height("100vh")
                 .overflow("hidden")
         ) {
-            Pane(scrollable: false) {
+            Pane(title: "Swift Syntax Scope Visualizer", scrollable: false) {
                 SwiftCodeEditor(text: text, onInput: onTextChange)
             }
             SwiftSyntaxView(syntax: parsed.syntax)
