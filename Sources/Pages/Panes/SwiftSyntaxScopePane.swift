@@ -2,7 +2,7 @@ import React
 import SwiftSyntax
 import SwiftSyntaxScope
 
-internal struct SwiftSyntaxScopeVisualizeView: Component {
+internal struct SwiftSyntaxScopePane: Component {
     let syntax: SourceFileSyntax
 
     var deps: Deps? {
@@ -25,7 +25,7 @@ internal struct SwiftSyntaxScopeVisualizeView: Component {
 }
 
 internal struct ScopeTreeNodeView: Component {
-    var key: AnyHashable? { scope.syntax.id }
+    var key: AnyHashable? { ObjectIdentifier(scope) }
 
     let scope: any SyntaxScopeProtocol
 
@@ -35,7 +35,15 @@ internal struct ScopeTreeNodeView: Component {
         return HoverHighlight {
             Accordion {
                 span(style: .init().color("#c92a2a")) {
-                    scope.description
+                    scope.scopeTypeDescription
+                }
+
+                span(
+                    style: .init()
+                        .marginLeft("8px")
+                        .color("#666")
+                ) {
+                    scope.sourceRangeDescription
                 }
 
                 if !names.isEmpty {
@@ -53,5 +61,13 @@ internal struct ScopeTreeNodeView: Component {
                 }
             }
         }
+    }
+}
+
+private extension SyntaxScopeProtocol {
+    var sourceRangeDescription: String {
+        let lower = sourceLocationConverter.location(for: sourceRange.lowerBound)
+        let upper = sourceLocationConverter.location(for: sourceRange.upperBound)
+        return "[\(lower.line):\(lower.column) - \(upper.line):\(upper.column)]"
     }
 }

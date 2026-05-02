@@ -2,7 +2,7 @@
 @_spi(Experimental) import SwiftLexicalLookup
 import React
 
-internal struct SwiftSyntaxView: Component {
+internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
 
     @State var hideNonScope: Bool = false

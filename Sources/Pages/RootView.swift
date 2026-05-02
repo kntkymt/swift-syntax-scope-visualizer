@@ -1,6 +1,5 @@
 import React
 import SRTJavaScriptKitEx
-import SwiftCodeEditor
 import SwiftParser
 import SwiftSyntax
 
@@ -38,11 +37,9 @@ public struct RootView: Component {
                 .height("100vh")
                 .overflow("hidden")
         ) {
-            Pane(title: "Swift Syntax Scope Visualizer", scrollable: false) {
-                SwiftCodeEditor(text: text, onInput: onTextChange)
-            }
-            SwiftSyntaxView(syntax: parsed.syntax)
-            SwiftSyntaxScopeVisualizeView(syntax: parsed.syntax)
+            SwiftCodeEditorPane(text: text, onInput: onTextChange)
+            SwiftLexicalLookupPane(syntax: parsed.syntax)
+            SwiftSyntaxScopePane(syntax: parsed.syntax)
         }
     }
 }
