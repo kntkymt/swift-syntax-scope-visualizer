@@ -9,8 +9,13 @@ internal struct SwiftSyntaxScopeVisualizeView: Component {
         let scope = SourceFileScope(syntax: syntax)
         scope.buildFullyExpandedTree()
 
-        return Pane(title: "Swift Syntax Scope (referencing swift compiler)", showRightBorder: false) {
-            ScopeTreeNodeView(scope: scope)
+        return Pane(
+            title: "Swift Syntax Scope (referencing swift compiler)",
+            showRightBorder: false
+        ) {
+            div(style: .init().whiteSpace("nowrap")) {
+                ScopeTreeNodeView(scope: scope)
+            }
         }
     }
 }

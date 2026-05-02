@@ -129,12 +129,14 @@ import SwiftSyntax
     }
 
     @Test func variableDeclScopeDoesNotLeakAncestorNames() {
-        let syntax = Parser.parse(source: """
-            class C {
-                let outer = 1
-                var x: Int { 0 }
-            }
-            """)
+        let syntax = Parser.parse(
+            source: """
+                class C {
+                    let outer = 1
+                    var x: Int { 0 }
+                }
+                """
+        )
         let root = buildSyntaxTree(from: syntax)!
         let varDecl = find(in: root, typeName: "VariableDecl")!
 
@@ -143,13 +145,15 @@ import SwiftSyntax
     }
 
     @Test func codeBlockFoldsGuardLetIntoIntroducedNames() {
-        let syntax = Parser.parse(source: """
-            func f() {
-                let a = 1
-                guard let b = 10 else { return }
-                let c = 1
-            }
-            """)
+        let syntax = Parser.parse(
+            source: """
+                func f() {
+                    let a = 1
+                    guard let b = 10 else { return }
+                    let c = 1
+                }
+                """
+        )
         let root = buildSyntaxTree(from: syntax)!
         let codeBlock = find(in: root, typeName: "CodeBlock")!
 
@@ -157,12 +161,14 @@ import SwiftSyntax
     }
 
     @Test func guardStmtIntroducesBindingsToParent() {
-        let syntax = Parser.parse(source: """
-            func f(opt: Int?) {
-                guard let x = opt, let y = opt else { return }
-                _ = x + y
-            }
-            """)
+        let syntax = Parser.parse(
+            source: """
+                func f(opt: Int?) {
+                    guard let x = opt, let y = opt else { return }
+                    _ = x + y
+                }
+                """
+        )
         let root = buildSyntaxTree(from: syntax)!
         let guardStmt = find(in: root, typeName: "GuardStmt")!
 
@@ -172,12 +178,14 @@ import SwiftSyntax
     }
 
     @Test func ifConfigDeclIntroducesDeclsToParent() {
-        let syntax = Parser.parse(source: """
-            #if DEBUG
-            let x = 1
-            let y = 2
-            #endif
-            """)
+        let syntax = Parser.parse(
+            source: """
+                #if DEBUG
+                let x = 1
+                let y = 2
+                #endif
+                """
+        )
         let root = buildSyntaxTree(from: syntax)!
         let ifConfig = find(in: root, typeName: "IfConfigDecl")!
 
@@ -194,13 +202,15 @@ import SwiftSyntax
     }
 
     @Test func ifExprWithoutElseIntroducesOptionalBinding() {
-        let syntax = Parser.parse(source: """
-            func f() {
-                if let a = 1 {
-                    let a1 = 2
+        let syntax = Parser.parse(
+            source: """
+                func f() {
+                    if let a = 1 {
+                        let a1 = 2
+                    }
                 }
-            }
-            """)
+                """
+        )
         let root = buildSyntaxTree(from: syntax)!
         let ifExpr = find(in: root, typeName: "IfExpr")!
 
@@ -208,15 +218,17 @@ import SwiftSyntax
     }
 
     @Test func ifExprWithElseIfIntroducesOuterOptionalBinding() {
-        let syntax = Parser.parse(source: """
-            func f() {
-                if let a = 1 {
-                    let a1 = 2
-                } else if let b = 2 {
-                    let b1 = 2
+        let syntax = Parser.parse(
+            source: """
+                func f() {
+                    if let a = 1 {
+                        let a1 = 2
+                    } else if let b = 2 {
+                        let b1 = 2
+                    }
                 }
-            }
-            """)
+                """
+        )
         let root = buildSyntaxTree(from: syntax)!
         let outerIf = find(in: root, typeName: "IfExpr")!
 
@@ -224,15 +236,17 @@ import SwiftSyntax
     }
 
     @Test func ifExprWithPlainElseIntroducesOptionalBinding() {
-        let syntax = Parser.parse(source: """
-            func f() {
-                if let a = 1 {
-                    let a1 = 2
-                } else {
-                    let z = 0
+        let syntax = Parser.parse(
+            source: """
+                func f() {
+                    if let a = 1 {
+                        let a1 = 2
+                    } else {
+                        let z = 0
+                    }
                 }
-            }
-            """)
+                """
+        )
         let root = buildSyntaxTree(from: syntax)!
         let ifExpr = find(in: root, typeName: "IfExpr")!
 
@@ -240,15 +254,17 @@ import SwiftSyntax
     }
 
     @Test func ifExprWithElseIntroducesMultipleOptionalBindings() {
-        let syntax = Parser.parse(source: """
-            func f(opt: Int?) {
-                if let a = opt, let b = opt {
-                    _ = a + b
-                } else {
-                    return
+        let syntax = Parser.parse(
+            source: """
+                func f(opt: Int?) {
+                    if let a = opt, let b = opt {
+                        _ = a + b
+                    } else {
+                        return
+                    }
                 }
-            }
-            """)
+                """
+        )
         let root = buildSyntaxTree(from: syntax)!
         let ifExpr = find(in: root, typeName: "IfExpr")!
 
@@ -264,12 +280,14 @@ import SwiftSyntax
     }
 
     @Test func nodeIdsAreUnique() {
-        let syntax = Parser.parse(source: """
-            struct Foo {
-                let x: Int = 1
-                func bar() {}
-            }
-            """)
+        let syntax = Parser.parse(
+            source: """
+                struct Foo {
+                    let x: Int = 1
+                    func bar() {}
+                }
+                """
+        )
         let root = buildSyntaxTree(from: syntax)!
 
         var seen: Set<Int> = []
@@ -294,7 +312,9 @@ private func find(in node: SyntaxTreeNode, typeName: String) -> SyntaxTreeNode? 
     return nil
 }
 
-private func find(in node: SyntaxTreeNode, typeName: String, whereLabel label: String) -> SyntaxTreeNode? {
+private func find(in node: SyntaxTreeNode, typeName: String, whereLabel label: String)
+    -> SyntaxTreeNode?
+{
     if node.typeName == typeName && node.label == label { return node }
     for child in node.children {
         if let found = find(in: child, typeName: typeName, whereLabel: label) {

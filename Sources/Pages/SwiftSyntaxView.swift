@@ -33,8 +33,10 @@ internal struct SwiftSyntaxView: Component {
                 }
             }
         ) {
-            if let root {
-                SyntaxTreeNodeView(node: root, hideNonScope: hideNonScope)
+            div(style: .init().whiteSpace("nowrap")) {
+                if let root {
+                    SyntaxTreeNodeView(node: root, hideNonScope: hideNonScope)
+                }
             }
         }
     }
@@ -42,6 +44,10 @@ internal struct SwiftSyntaxView: Component {
 
 internal struct SyntaxTreeNodeView: Component {
     var key: AnyHashable? { node.id }
+
+    var deps: Deps? {
+        [node, hideNonScope]
+    }
 
     let node: SyntaxTreeNode
     let hideNonScope: Bool
@@ -111,7 +117,7 @@ internal enum SyntaxTreeNodeKind {
     case token
 }
 
-internal struct SyntaxTreeNode {
+internal struct SyntaxTreeNode: Hashable {
     let id: Int
     let label: String?
     let typeName: String
@@ -182,7 +188,8 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
         }
 
         let rawTypeName = "\(syntax.syntaxNodeType)"
-        let typeName = rawTypeName.hasSuffix("Syntax")
+        let typeName =
+            rawTypeName.hasSuffix("Syntax")
             ? String(rawTypeName.dropLast("Syntax".count))
             : rawTypeName
 

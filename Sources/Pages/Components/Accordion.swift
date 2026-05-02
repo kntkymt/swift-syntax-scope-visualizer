@@ -14,6 +14,10 @@ internal struct Accordion: Component {
     private var header: [Node]
     private var body: [Node]
 
+    var deps: Deps? {
+        [header.deps, body.deps]
+    }
+
     @State private var isExpanded: Bool
 
     func render() -> Node {

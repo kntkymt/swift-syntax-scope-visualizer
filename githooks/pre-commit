@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+before_diff=$(mktemp)
+after_diff=$(mktemp)
+
+trap 'rm -f "$before_diff" "$after_diff"' EXIT HUP INT TERM
+
+git diff --no-ext-diff --binary -- . >"$before_diff"
+
+if ! make format; then
+    echo "pre-commit: \`make format\` failed. Commit aborted." >&2
+    exit 1
+fi
+
+git diff --no-ext-diff --binary -- . >"$after_diff"
+
+if ! cmp -s "$before_diff" "$after_diff"; then
+    echo "pre-commit: \`make format\` changed tracked files. Review and restage the changes, then commit again." >&2
+    exit 1
+fi

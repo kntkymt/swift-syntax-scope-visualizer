@@ -18,7 +18,7 @@ let package = Package(
             dependencies: [
                 "Pages",
                 "JavaScriptKit",
-                .product(name: "React", package: "swift-react")
+                .product(name: "React", package: "swift-react"),
             ]
         ),
         .target(
@@ -29,7 +29,7 @@ let package = Package(
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
                 .product(name: "SwiftLexicalLookup", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxScope", package: "swift-syntax-scope")
+                .product(name: "SwiftSyntaxScope", package: "swift-syntax-scope"),
             ]
         ),
         .target(
@@ -44,7 +44,7 @@ let package = Package(
                 "Pages",
                 "swift-syntax-scope-visualizer",
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
-                .product(name: "SwiftParser", package: "swift-syntax")
+                .product(name: "SwiftParser", package: "swift-syntax"),
             ]
         ),
     ],

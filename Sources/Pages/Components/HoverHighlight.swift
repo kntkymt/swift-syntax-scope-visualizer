@@ -1,6 +1,12 @@
 import React
 
 internal struct HoverHighlight: Component {
+
+    private var highlightColor: String
+    private var children: [Node]
+
+    @State private var isHovered: Bool = false
+
     internal init(
         highlightColor: String = "rgba(100, 149, 237, 0.25)",
         @ChildrenBuilder children: () -> [Node] = { [] }
@@ -9,10 +15,9 @@ internal struct HoverHighlight: Component {
         self.children = children()
     }
 
-    private var highlightColor: String
-    private var children: [Node]
-
-    @State private var isHovered: Bool = false
+    var deps: Deps? {
+        [highlightColor, children.deps]
+    }
 
     func render() -> Node {
         // Highlight only the deepest hovered node and its descendants by stopping the mouse event
@@ -29,6 +34,7 @@ internal struct HoverHighlight: Component {
 
         return div(
             style: .init()
+                .minWidth("max-content")
                 .backgroundColor(isHovered ? highlightColor : "transparent"),
             listeners: .init()
                 .mouseover(onMouseOver)
