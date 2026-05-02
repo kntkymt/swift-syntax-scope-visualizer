@@ -5,6 +5,10 @@ import SwiftSyntaxScope
 internal struct SwiftSyntaxScopeVisualizeView: Component {
     let syntax: SourceFileSyntax
 
+    var deps: Deps? {
+        [syntax.id]
+    }
+
     func render() -> Node {
         let scope = SourceFileScope(syntax: syntax)
         scope.buildFullyExpandedTree()

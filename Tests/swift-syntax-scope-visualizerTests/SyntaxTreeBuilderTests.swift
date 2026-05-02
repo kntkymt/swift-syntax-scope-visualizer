@@ -290,7 +290,7 @@ import SwiftSyntax
         )
         let root = buildSyntaxTree(from: syntax)!
 
-        var seen: Set<Int> = []
+        var seen: Set<SyntaxIdentifier> = []
         collectIds(in: root, into: &seen)
         let total = countNodes(in: root)
         #expect(seen.count == total)
@@ -340,7 +340,7 @@ private func containsEmptyCollection(in node: SyntaxTreeNode) -> Bool {
     return node.children.contains { containsEmptyCollection(in: $0) }
 }
 
-private func collectIds(in node: SyntaxTreeNode, into set: inout Set<Int>) {
+private func collectIds(in node: SyntaxTreeNode, into set: inout Set<SyntaxIdentifier>) {
     set.insert(node.id)
     for child in node.children {
         collectIds(in: child, into: &set)

@@ -7,6 +7,10 @@ internal struct SwiftSyntaxView: Component {
 
     @State var hideNonScope: Bool = false
 
+    var deps: Deps? {
+        [syntax.id]
+    }
+
     func render() -> Node {
         let root = buildSyntaxTree(from: syntax)
 
@@ -118,7 +122,7 @@ internal enum SyntaxTreeNodeKind {
 }
 
 internal struct SyntaxTreeNode: Hashable {
-    let id: Int
+    let id: SyntaxIdentifier
     let label: String?
     let typeName: String
     let kind: SyntaxTreeNodeKind
@@ -148,7 +152,6 @@ internal extension SyntaxTreeNode {
 }
 
 internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode? {
-    var nextId = 0
     let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
 
     func build(_ syntax: Syntax, label: String?) -> SyntaxTreeNode? {
@@ -164,9 +167,6 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
         if isCollection && childList.isEmpty {
             return nil
         }
-
-        let id = nextId
-        nextId += 1
 
         let kind: SyntaxTreeNodeKind
         let tokenText: String?
@@ -203,7 +203,7 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
         }
 
         return SyntaxTreeNode(
-            id: id,
+            id: syntax.id,
             label: label,
             typeName: typeName,
             kind: kind,

@@ -34,6 +34,10 @@ internal struct Pane: Component {
     private var scrollable: Bool
     private var children: [Node]
 
+    var deps: Deps? {
+        [header.deps, showRightBorder, scrollable, children.deps]
+    }
+
     func render() -> Node {
         div(
             style: .init()
