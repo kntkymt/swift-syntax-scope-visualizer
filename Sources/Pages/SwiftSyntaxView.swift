@@ -5,12 +5,36 @@ import React
 internal struct SwiftSyntaxView: Component {
     let syntax: any SyntaxProtocol
 
+    @State var hideNonScope: Bool = false
+
     func render() -> Node {
         let root = buildSyntaxTree(from: syntax)
 
-        return Pane(title: "Swift Lexical Lookup") {
+        let onToggle = EventListener { _ in
+            hideNonScope.toggle()
+        }
+
+        return Pane(
+            header: {
+                h4(style: .init().margin("0")) { "Swift Lexical Lookup" }
+
+                button(
+                    style: .init()
+                        .padding("4px 10px")
+                        .border("1px solid #ccc")
+                        .borderRadius("4px")
+                        .backgroundColor(hideNonScope ? "#495057" : "#fff")
+                        .color(hideNonScope ? "#fff" : "#000")
+                        .cursor("pointer")
+                        .font("inherit"),
+                    listeners: .init().click(onToggle)
+                ) {
+                    "Hide non-Scope Syntax"
+                }
+            }
+        ) {
             if let root {
-                SyntaxTreeNodeView(node: root)
+                SyntaxTreeNodeView(node: root, hideNonScope: hideNonScope)
             }
         }
     }
@@ -20,6 +44,7 @@ internal struct SyntaxTreeNodeView: Component {
     var key: AnyHashable? { node.id }
 
     let node: SyntaxTreeNode
+    let hideNonScope: Bool
 
     func render() -> Node {
         let typeColor = node.isScope ? "#c92a2a" : "#0a66c2"
@@ -72,8 +97,8 @@ internal struct SyntaxTreeNodeView: Component {
                     }
                 }
             } body: {
-                node.children.map { (child) in
-                    SyntaxTreeNodeView(node: child)
+                node.visibleChildren(hideNonScope: hideNonScope).map { (child) in
+                    SyntaxTreeNodeView(node: child, hideNonScope: hideNonScope)
                 }
             }
         }
@@ -98,6 +123,22 @@ internal struct SyntaxTreeNode {
     let introducedNames: [String]
     let introducedNamesToParent: [String]
     let children: [SyntaxTreeNode]
+}
+
+internal extension SyntaxTreeNode {
+    // Lift scope descendants of hidden non-scope children up to this level so the
+    // visible tree only contains scope nodes while preserving ancestor order.
+    func visibleChildren(hideNonScope: Bool) -> [SyntaxTreeNode] {
+        guard hideNonScope else { return children }
+
+        return children.flatMap { (child) -> [SyntaxTreeNode] in
+            if child.isScope {
+                return [child]
+            } else {
+                return child.visibleChildren(hideNonScope: hideNonScope)
+            }
+        }
+    }
 }
 
 internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode? {

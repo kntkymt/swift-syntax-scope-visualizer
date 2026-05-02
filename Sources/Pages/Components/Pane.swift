@@ -2,18 +2,34 @@ import React
 
 internal struct Pane: Component {
     internal init(
-        title: String,
+        @ChildrenBuilder header: () -> [Node],
         showRightBorder: Bool = true,
         scrollable: Bool = true,
         @ChildrenBuilder children: () -> [Node] = { [] }
     ) {
-        self.title = title
+        self.header = header()
         self.showRightBorder = showRightBorder
         self.scrollable = scrollable
         self.children = children()
     }
 
-    private var title: String
+    internal init(
+        title: String,
+        showRightBorder: Bool = true,
+        scrollable: Bool = true,
+        @ChildrenBuilder children: () -> [Node] = { [] }
+    ) {
+        self.init(
+            header: {
+                h4(style: .init().margin("0")) { title }
+            },
+            showRightBorder: showRightBorder,
+            scrollable: scrollable,
+            children: children
+        )
+    }
+
+    private var header: [Node]
     private var showRightBorder: Bool
     private var scrollable: Bool
     private var children: [Node]
@@ -30,16 +46,19 @@ internal struct Pane: Component {
                 .boxSizing("border-box")
                 .fontFamily("ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
         ) {
-            h4(
+            div(
                 style: .init()
-                    .margin("0")
                     .padding("8px 12px")
                     .flexShrink("0")
                     .borderBottom("1px solid #ddd")
                     .backgroundColor("#f5f5f5")
+                    .display("flex")
+                    .alignItems("center")
+                    .justifyContent("space-between")
+                    .gap("8px")
                     .fontFamily("system-ui, -apple-system, BlinkMacSystemFont, sans-serif")
             ) {
-                title
+                header
             }
 
             div(
