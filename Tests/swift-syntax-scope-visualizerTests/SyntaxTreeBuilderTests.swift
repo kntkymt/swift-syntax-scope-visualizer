@@ -193,6 +193,69 @@ import SwiftSyntax
         #expect(funcDecl.introducedNamesToParent.isEmpty)
     }
 
+    @Test func ifExprWithoutElseIntroducesOptionalBinding() {
+        let syntax = Parser.parse(source: """
+            func f() {
+                if let a = 1 {
+                    let a1 = 2
+                }
+            }
+            """)
+        let root = buildSyntaxTree(from: syntax)!
+        let ifExpr = find(in: root, typeName: "IfExpr")!
+
+        #expect(ifExpr.introducedNames.contains("a"))
+    }
+
+    @Test func ifExprWithElseIfIntroducesOuterOptionalBinding() {
+        let syntax = Parser.parse(source: """
+            func f() {
+                if let a = 1 {
+                    let a1 = 2
+                } else if let b = 2 {
+                    let b1 = 2
+                }
+            }
+            """)
+        let root = buildSyntaxTree(from: syntax)!
+        let outerIf = find(in: root, typeName: "IfExpr")!
+
+        #expect(outerIf.introducedNames.contains("a"))
+    }
+
+    @Test func ifExprWithPlainElseIntroducesOptionalBinding() {
+        let syntax = Parser.parse(source: """
+            func f() {
+                if let a = 1 {
+                    let a1 = 2
+                } else {
+                    let z = 0
+                }
+            }
+            """)
+        let root = buildSyntaxTree(from: syntax)!
+        let ifExpr = find(in: root, typeName: "IfExpr")!
+
+        #expect(ifExpr.introducedNames.contains("a"))
+    }
+
+    @Test func ifExprWithElseIntroducesMultipleOptionalBindings() {
+        let syntax = Parser.parse(source: """
+            func f(opt: Int?) {
+                if let a = opt, let b = opt {
+                    _ = a + b
+                } else {
+                    return
+                }
+            }
+            """)
+        let root = buildSyntaxTree(from: syntax)!
+        let ifExpr = find(in: root, typeName: "IfExpr")!
+
+        #expect(ifExpr.introducedNames.contains("a"))
+        #expect(ifExpr.introducedNames.contains("b"))
+    }
+
     @Test func sourceRangeUsesLineColumnFormat() {
         let syntax = Parser.parse(source: "let x = 1")
         let root = buildSyntaxTree(from: syntax)!

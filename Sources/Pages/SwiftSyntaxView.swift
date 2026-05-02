@@ -249,7 +249,18 @@ private extension ScopeSyntax {
     // delegate via `lookupInParent` (VariableDeclScope, MacroDeclScope, ...) leak
     // ancestor names. Drop results whose scope isn't this scope or its descendant.
     var lookupAtScopeEnd: [LookupName] {
-        let position = trimmedRange.displayedUpperBound
+        // IfExprSyntax.lookup short-circuits to the parent scope when the lookup
+        // position falls inside its `elseBody`, so querying at the if's trimmed
+        // upperBound (past the `else`) drops names bound by the if's
+        // optional-binding conditions. Query inside the then-body (just before
+        // the `else`) so `if let x = ...` style names are visible.
+        let position: AbsolutePosition
+        if let ifExpr = self.as(IfExprSyntax.self), ifExpr.elseKeyword != nil {
+            position = ifExpr.body.trimmedRange.displayedUpperBound
+        } else {
+            position = trimmedRange.displayedUpperBound
+        }
+
         let config = LookupConfig(finishInSequentialScope: true)
         let ownId = Syntax(self).id
 
