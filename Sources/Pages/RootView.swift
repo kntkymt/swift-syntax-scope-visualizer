@@ -13,8 +13,7 @@ public struct RootView: Component {
     public init() {}
 
     public func render() -> Node {
-        let onTextChange = EventListener { (event) in
-            let text = try! String.mustConstruct(from: event.jsValue.target.value)
+        let onTextChange = Function<Void, String> { (text) in
             self.text = text
         }
 

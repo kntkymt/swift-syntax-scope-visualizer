@@ -2,13 +2,13 @@ import React
 import SRTDOM
 
 public struct SwiftCodeEditor: Component {
-    public init(text: String, onInput: EventListener) {
+    public init(text: String, onInput: Function<Void, String>) {
         self.text = text
         self.onInput = onInput
     }
 
     public var text: String
-    public var onInput: EventListener
+    public var onInput: Function<Void, String>
 
     @Ref var gutterRef: JSHTMLElement?
 
@@ -20,6 +20,11 @@ public struct SwiftCodeEditor: Component {
         let lineCount = text.count(where: \.isNewline) + 1
         let lineNumbers = (1...lineCount).map(String.init).joined(separator: "\n")
 
+        let onInputEvent = EventListener { (event) in
+            let text = try! String.mustConstruct(from: event.jsValue.target.value)
+            onInput(text)
+        }
+
         // Keep the gutter's scroll position in sync with the textarea so that line numbers stay
         // aligned with their corresponding lines. The gutter is `overflow: hidden` and never
         // scrolls on its own, so we drive it programmatically by writing `scrollTop`.
@@ -30,7 +35,7 @@ public struct SwiftCodeEditor: Component {
 
         // Insert a tab character on Tab instead of moving focus. `execCommand("insertText")` is
         // used because it preserves the native undo stack and dispatches an `input` event, which
-        // lets the existing `onInput` listener pick up the change without extra wiring.
+        // lets the input listener pick up the change without extra wiring.
         let onKeyDown = EventListener { (event) in
             let key = String.unsafeConstruct(from: event.jsValue.key)
             guard key == "Tab" else { return }
@@ -83,7 +88,7 @@ public struct SwiftCodeEditor: Component {
                     .overflow("auto")
                     .boxSizing("border-box"),
                 listeners: .init()
-                    .input(onInput)
+                    .input(onInputEvent)
                     .scroll(onScroll)
                     .keydown(onKeyDown)
             )
