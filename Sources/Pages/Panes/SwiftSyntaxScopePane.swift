@@ -24,7 +24,7 @@ internal struct SwiftSyntaxScopePane: Component {
     }
 }
 
-internal struct ScopeTreeNodeView: Component {
+private struct ScopeTreeNodeView: Component {
     var key: AnyHashable? { ObjectIdentifier(scope) }
 
     let scope: any SyntaxScopeProtocol
@@ -66,8 +66,6 @@ internal struct ScopeTreeNodeView: Component {
 
 private extension SyntaxScopeProtocol {
     var sourceRangeDescription: String {
-        let lower = sourceLocationConverter.location(for: sourceRange.lowerBound)
-        let upper = sourceLocationConverter.location(for: sourceRange.upperBound)
-        return "[\(lower.line):\(lower.column) - \(upper.line):\(upper.column)]"
+        sourceRange.description(converter: sourceLocationConverter)
     }
 }

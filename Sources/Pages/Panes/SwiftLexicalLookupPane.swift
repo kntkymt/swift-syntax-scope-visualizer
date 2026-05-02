@@ -46,7 +46,7 @@ internal struct SwiftLexicalLookupPane: Component {
     }
 }
 
-internal struct SyntaxTreeNodeView: Component {
+private struct SyntaxTreeNodeView: Component {
     var key: AnyHashable? { node.id }
 
     var deps: Deps? {
@@ -208,7 +208,7 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
             typeName: typeName,
             kind: kind,
             tokenText: tokenText,
-            sourceRange: syntax.sourceRangeDescription(converter: converter),
+            sourceRange: syntax.range.description(converter: converter),
             isScope: scope != nil,
             scopeDebugName: scope?.scopeDebugName,
             introducedNames: introducedNames,
@@ -218,13 +218,6 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
     }
 
     return build(Syntax(syntax), label: nil)
-}
-
-private extension SyntaxProtocol {
-    func sourceRangeDescription(converter: SourceLocationConverter) -> String {
-        let range = sourceRange(converter: converter)
-        return "[\(range.start.line):\(range.start.column) - \(range.end.line):\(range.end.column)]"
-    }
 }
 
 private extension Range<AbsolutePosition> {
