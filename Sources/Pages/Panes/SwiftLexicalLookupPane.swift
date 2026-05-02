@@ -69,16 +69,6 @@ private struct SyntaxTreeNodeView: Component {
                     }
                 }
 
-                if let token = node.tokenText {
-                    span(
-                        style: .init()
-                            .marginLeft("8px")
-                            .color("#666")
-                    ) {
-                        "\"\(token)\""
-                    }
-                }
-
                 if !node.declNames.isEmpty {
                     span(
                         style: .init()
@@ -128,7 +118,6 @@ private struct SyntaxTreeNodeView: Component {
 internal struct SyntaxTreeNode: Hashable {
     let id: SyntaxIdentifier
     let typeName: String
-    let tokenText: String?
     let sourceRange: String
     let isScope: Bool
     let scopeDebugName: String?
@@ -165,17 +154,8 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
             return nil
         }
 
-        let tokenText: String?
-        if let token = syntax.as(TokenSyntax.self) {
-            // Only show identifier tokens. Everything else (keywords, punctuation, literals,
-            // operators, quotes, EOF, …) is either fully determined by the surrounding syntax
-            // node or visible verbatim in the source pane.
-            guard case .identifier = token.tokenKind else {
-                return nil
-            }
-            tokenText = token.text
-        } else {
-            tokenText = nil
+        if syntax.is(TokenSyntax.self) {
+            return nil
         }
 
         let rawTypeName = "\(syntax.syntaxNodeType)"
@@ -195,7 +175,6 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
         return SyntaxTreeNode(
             id: syntax.id,
             typeName: typeName,
-            tokenText: tokenText,
             sourceRange: syntax.range.description(converter: converter),
             isScope: scope != nil,
             scopeDebugName: scope?.scopeDebugName,
