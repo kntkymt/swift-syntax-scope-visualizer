@@ -49,6 +49,14 @@ internal struct SyntaxTreeNodeView: Component {
                         "\"\(token)\""
                     }
                 }
+
+                span(
+                    style: .init()
+                        .marginLeft("8px")
+                        .color("#666")
+                ) {
+                    node.sourceRange
+                }
             } body: {
                 node.children.map { (child) in
                     SyntaxTreeNodeView(node: child)
@@ -70,11 +78,13 @@ internal struct SyntaxTreeNode {
     let typeName: String
     let kind: SyntaxTreeNodeKind
     let tokenText: String?
+    let sourceRange: String
     let children: [SyntaxTreeNode]
 }
 
 internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode? {
     var nextId = 0
+    let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
 
     func build(_ syntax: Syntax, label: String?) -> SyntaxTreeNode? {
         let isCollection: Bool
@@ -128,9 +138,30 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
             typeName: typeName,
             kind: kind,
             tokenText: tokenText,
+            sourceRange: syntax.sourceRangeDescription(converter: converter),
             children: children
         )
     }
 
     return build(Syntax(syntax), label: nil)
+}
+
+private extension SyntaxProtocol {
+    func sourceRangeDescription(converter: SourceLocationConverter) -> String {
+        let range = trimmedRange
+        let lowerBound = converter.location(for: range.lowerBound)
+        let upperBound = converter.location(for: range.displayedUpperBound)
+
+        return "[\(lowerBound.line):\(lowerBound.column) - \(upperBound.line):\(upperBound.column)]"
+    }
+}
+
+private extension Range<AbsolutePosition> {
+    var displayedUpperBound: AbsolutePosition {
+        guard lowerBound != upperBound else {
+            return upperBound
+        }
+
+        return AbsolutePosition(utf8Offset: upperBound.utf8Offset - 1)
+    }
 }
