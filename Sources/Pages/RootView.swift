@@ -1,8 +1,6 @@
 import React
 import SwiftCodeEditor
 import SwiftParser
-import SwiftSyntax
-import SwiftSyntaxScope
 
 public struct RootView: Component {
 
@@ -25,30 +23,11 @@ public struct RootView: Component {
                 .height("100vh")
                 .overflow("hidden")
         ) {
-            SwiftCodeEditor(text: text, onInput: onTextChange)
+            Pane(scrollable: false) {
+                SwiftCodeEditor(text: text, onInput: onTextChange)
+            }
             SwiftSyntaxView(syntax: syntax)
             SwiftSyntaxScopeVisualizeView(syntax: syntax)
-        }
-    }
-}
-
-internal struct SwiftSyntaxScopeVisualizeView: Component {
-    let syntax: SourceFileSyntax
-
-    func render() -> Node {
-        div(
-            style: .init()
-                .flex("1 1 0")
-                .minWidth("0")
-                .height("100%")
-                .overflow("auto")
-                .padding("8px")
-                .boxSizing("border-box")
-                .whiteSpace("pre-wrap")
-        ) {
-            let scope = SourceFileScope(syntax: syntax)
-            let _ = scope.buildFullyExpandedTree()
-            scope.dump()
         }
     }
 }

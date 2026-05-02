@@ -7,17 +7,7 @@ internal struct SwiftSyntaxView: Component {
     func render() -> Node {
         let root = buildSyntaxTree(from: syntax)
 
-        return div(
-            style: .init()
-                .flex("1 1 0")
-                .minWidth("0")
-                .height("100%")
-                .overflow("auto")
-                .padding("8px")
-                .borderRight("1px solid #ddd")
-                .boxSizing("border-box")
-                .fontFamily("ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
-        ) {
+        return Pane {
             if let root {
                 SyntaxTreeNodeView(node: root)
             }

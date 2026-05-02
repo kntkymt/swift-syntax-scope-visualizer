@@ -42,13 +42,8 @@ public struct SwiftCodeEditor: Component {
             style: .init()
                 .display("flex")
                 .flexDirection("row")
-                .flex("1 1 0")
-                .minWidth("0")
                 .height("100%")
-                .borderRight("1px solid #ddd")
-                .fontFamily("ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
                 .fontSize("15px")
-                .boxSizing("border-box")
         ) {
             div(
                 ref: $gutterRef,
