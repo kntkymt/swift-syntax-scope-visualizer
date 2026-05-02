@@ -1,4 +1,5 @@
 @_spi(RawSyntax) import SwiftSyntax
+@_spi(Experimental) import SwiftLexicalLookup
 import React
 
 internal struct SwiftSyntaxView: Component {
@@ -21,21 +22,10 @@ internal struct SyntaxTreeNodeView: Component {
     let node: SyntaxTreeNode
 
     func render() -> Node {
-        let typeColor: String
-        switch node.kind {
-        case .layout: typeColor = "#0a66c2"
-        case .collection: typeColor = "#a4508b"
-        case .token: typeColor = "#1f7a3f"
-        }
+        let typeColor = node.isScope ? "#c92a2a" : "#0a66c2"
 
         return HoverHighlight {
             Accordion {
-                if let label = node.label {
-                    span(style: .init().color("#b1591a")) {
-                        "\(label): "
-                    }
-                }
-
                 span(style: .init().color(typeColor)) {
                     node.typeName
                 }
@@ -56,6 +46,26 @@ internal struct SyntaxTreeNodeView: Component {
                         .color("#666")
                 ) {
                     node.sourceRange
+                }
+
+                if !node.introducedNames.isEmpty {
+                    span(
+                        style: .init()
+                            .marginLeft("8px")
+                            .color("#666")
+                    ) {
+                        "introduces=[\(node.introducedNames.joined(separator: ", "))]"
+                    }
+                }
+
+                if !node.introducedNamesToParent.isEmpty {
+                    span(
+                        style: .init()
+                            .marginLeft("8px")
+                            .color("#666")
+                    ) {
+                        "introducesToParent=[\(node.introducedNamesToParent.joined(separator: ", "))]"
+                    }
                 }
             } body: {
                 node.children.map { (child) in
@@ -79,6 +89,9 @@ internal struct SyntaxTreeNode {
     let kind: SyntaxTreeNodeKind
     let tokenText: String?
     let sourceRange: String
+    let isScope: Bool
+    let introducedNames: [String]
+    let introducedNamesToParent: [String]
     let children: [SyntaxTreeNode]
 }
 
@@ -127,6 +140,10 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
             ? String(rawTypeName.dropLast("Syntax".count))
             : rawTypeName
 
+        let scope = syntax.asProtocol(SyntaxProtocol.self) as? ScopeSyntax
+        let introducedNames = scope?.defaultIntroducedNames.map(\.displayText) ?? []
+        let introducedNamesToParent = syntax.introducedNameTextsToParent
+
         let children: [SyntaxTreeNode] = childList.compactMap { (child) in
             let childLabel = child.keyPathInParent.flatMap { childName($0) }
             return build(child, label: childLabel)
@@ -139,6 +156,9 @@ internal func buildSyntaxTree(from syntax: any SyntaxProtocol) -> SyntaxTreeNode
             kind: kind,
             tokenText: tokenText,
             sourceRange: syntax.sourceRangeDescription(converter: converter),
+            isScope: scope != nil,
+            introducedNames: introducedNames,
+            introducedNamesToParent: introducedNamesToParent,
             children: children
         )
     }
@@ -163,5 +183,93 @@ private extension Range<AbsolutePosition> {
         }
 
         return AbsolutePosition(utf8Offset: upperBound.utf8Offset - 1)
+    }
+}
+
+private extension LookupName {
+    var displayText: String {
+        switch self {
+        case .equivalentNames(let names):
+            return names.map(\.displayText).joined(separator: "/")
+        default:
+            return identifier.name
+        }
+    }
+}
+
+// `IntroducingToSequentialParentScopeSyntax` and its `namesIntroducedToSequentialParent`
+// are SwiftLexicalLookup-internal, so we replicate the logic here for the only two
+// conforming types: `GuardStmtSyntax` and `IfConfigDeclSyntax`.
+private extension Syntax {
+    var introducedNameTextsToParent: [String] {
+        if let guardStmt = self.as(GuardStmtSyntax.self) {
+            return guardStmt.conditions.flatMap { (element) in
+                Syntax(element.condition).introducedNameTexts
+            }
+        }
+
+        if let ifConfigDecl = self.as(IfConfigDeclSyntax.self) {
+            return ifConfigDecl.clauses.flatMap { (clause) in
+                clause.elementSyntaxes.flatMap(\.introducedNameTexts)
+            }
+        }
+
+        return []
+    }
+
+    var introducedNameTexts: [String] {
+        switch self.as(SyntaxEnum.self) {
+        case .identifierPattern(let pattern):
+            guard pattern.identifier.tokenKind != .wildcard else { return [] }
+            return [pattern.identifier.text]
+        case .variableDecl(let decl):
+            return decl.bindings.flatMap { Syntax($0.pattern).introducedNameTexts }
+        case .tuplePattern(let pattern):
+            return pattern.elements.flatMap { Syntax($0.pattern).introducedNameTexts }
+        case .tupleExpr(let expr):
+            return expr.elements.flatMap { Syntax($0).introducedNameTexts }
+        case .labeledExpr(let expr):
+            return Syntax(expr.expression).introducedNameTexts
+        case .valueBindingPattern(let pattern):
+            return Syntax(pattern.pattern).introducedNameTexts
+        case .expressionPattern(let pattern):
+            return Syntax(pattern.expression).introducedNameTexts
+        case .sequenceExpr(let expr):
+            return expr.elements.flatMap { Syntax($0).introducedNameTexts }
+        case .patternExpr(let expr):
+            return Syntax(expr.pattern).introducedNameTexts
+        case .optionalBindingCondition(let condition):
+            return Syntax(condition.pattern).introducedNameTexts
+        case .matchingPatternCondition(let condition):
+            return Syntax(condition.pattern).introducedNameTexts
+        case .functionCallExpr(let expr):
+            return expr.arguments.flatMap { Syntax($0.expression).introducedNameTexts }
+        case .optionalChainingExpr(let expr):
+            return Syntax(expr.expression).introducedNameTexts
+        default:
+            if let named = self.asProtocol(SyntaxProtocol.self) as? NamedDeclSyntax {
+                return [named.name.text]
+            }
+            return []
+        }
+    }
+}
+
+private extension IfConfigClauseSyntax {
+    var elementSyntaxes: [Syntax] {
+        switch elements {
+        case .statements(let list):
+            return list.map { Syntax($0.item) }
+        case .switchCases(let list):
+            return list.map { Syntax($0) }
+        case .decls(let list):
+            return list.map { Syntax($0.decl) }
+        case .postfixExpression(let expr):
+            return [Syntax(expr)]
+        case .attributes(let list):
+            return list.map { Syntax($0) }
+        case .none:
+            return []
+        }
     }
 }

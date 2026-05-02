@@ -92,6 +92,86 @@ import SwiftSyntax
         #expect(nameToken.tokenText == "Foo")
     }
 
+    @Test func sourceFileIsScopeWithNoIntroducedNames() {
+        let syntax = Parser.parse(source: "let x = 1")
+        let root = buildSyntaxTree(from: syntax)!
+
+        #expect(root.typeName == "SourceFile")
+        #expect(root.isScope)
+        #expect(root.introducedNames.isEmpty)
+    }
+
+    @Test func functionDeclIntroducesParameters() {
+        let syntax = Parser.parse(source: "func f(a: Int, b: String) {}")
+        let root = buildSyntaxTree(from: syntax)!
+        let funcDecl = find(in: root, typeName: "FunctionDecl")!
+
+        #expect(funcDecl.isScope)
+        #expect(funcDecl.introducedNames == ["a", "b"])
+    }
+
+    @Test func codeBlockIntroducesLocalBindings() {
+        let syntax = Parser.parse(source: "func f() { let x = 1; let y = 2 }")
+        let root = buildSyntaxTree(from: syntax)!
+        let codeBlock = find(in: root, typeName: "CodeBlock")!
+
+        #expect(codeBlock.isScope)
+        #expect(codeBlock.introducedNames == ["x", "y"])
+    }
+
+    @Test func nonScopeNodeHasEmptyIntroducedNames() {
+        let syntax = Parser.parse(source: "let x = 1")
+        let root = buildSyntaxTree(from: syntax)!
+        let identifierToken = find(in: root, typeName: "Token", whereLabel: "identifier")!
+
+        #expect(!identifierToken.isScope)
+        #expect(identifierToken.introducedNames.isEmpty)
+    }
+
+    @Test func guardStmtIntroducesBindingsToParent() {
+        let syntax = Parser.parse(source: """
+            func f(opt: Int?) {
+                guard let x = opt, let y = opt else { return }
+                _ = x + y
+            }
+            """)
+        let root = buildSyntaxTree(from: syntax)!
+        let guardStmt = find(in: root, typeName: "GuardStmt")!
+
+        #expect(guardStmt.isScope)
+        #expect(guardStmt.introducedNames.isEmpty)
+        #expect(guardStmt.introducedNamesToParent == ["x", "y"])
+    }
+
+    @Test func ifConfigDeclIntroducesDeclsToParent() {
+        let syntax = Parser.parse(source: """
+            #if DEBUG
+            let x = 1
+            let y = 2
+            #endif
+            """)
+        let root = buildSyntaxTree(from: syntax)!
+        let ifConfig = find(in: root, typeName: "IfConfigDecl")!
+
+        #expect(ifConfig.isScope)
+        #expect(ifConfig.introducedNamesToParent == ["x", "y"])
+    }
+
+    @Test func nonIntroducingNodeHasEmptyIntroducedNamesToParent() {
+        let syntax = Parser.parse(source: "func f(a: Int) { let x = 1 }")
+        let root = buildSyntaxTree(from: syntax)!
+        let funcDecl = find(in: root, typeName: "FunctionDecl")!
+
+        #expect(funcDecl.introducedNamesToParent.isEmpty)
+    }
+
+    @Test func sourceRangeUsesLineColumnFormat() {
+        let syntax = Parser.parse(source: "let x = 1")
+        let root = buildSyntaxTree(from: syntax)!
+
+        #expect(root.sourceRange == "[1:1 - 1:9]")
+    }
+
     @Test func nodeIdsAreUnique() {
         let syntax = Parser.parse(source: """
             struct Foo {

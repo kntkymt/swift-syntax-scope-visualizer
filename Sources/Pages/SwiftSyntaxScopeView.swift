@@ -25,7 +25,7 @@ internal struct ScopeTreeNodeView: Component {
 
         return HoverHighlight {
             Accordion {
-                span(style: .init().color("#0a66c2")) {
+                span(style: .init().color("#c92a2a")) {
                     scope.description
                 }
 

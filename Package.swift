@@ -28,6 +28,7 @@ let package = Package(
                 .product(name: "React", package: "swift-react"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
+                .product(name: "SwiftLexicalLookup", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxScope", package: "swift-syntax-scope")
             ]
         ),
