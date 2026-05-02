@@ -48,8 +48,10 @@ internal struct Pane: Component {
         ) {
             div(
                 style: .init()
-                    .padding("8px 12px")
+                    .height("44px")
+                    .padding("0 12px")
                     .flexShrink("0")
+                    .boxSizing("border-box")
                     .borderBottom("1px solid #ddd")
                     .backgroundColor("#f5f5f5")
                     .display("flex")
