@@ -48,7 +48,6 @@ public struct SwiftCodeEditor: Component {
                 .borderRight("1px solid #ddd")
                 .fontFamily("ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
                 .fontSize("15px")
-                .lineHeight("22px")
                 .boxSizing("border-box")
         ) {
             div(

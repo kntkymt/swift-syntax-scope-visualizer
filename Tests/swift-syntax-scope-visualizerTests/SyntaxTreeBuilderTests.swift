@@ -1,0 +1,161 @@
+import Testing
+import SwiftParser
+import SwiftSyntax
+@testable import Pages
+
+@Suite struct SyntaxTreeBuilderTests {
+    @Test func buildsRootForSimpleStruct() {
+        let syntax = Parser.parse(source: "struct Foo {}")
+        let root = buildSyntaxTree(from: syntax)
+        #expect(root != nil)
+        #expect(root?.typeName == "SourceFile")
+    }
+
+    @Test func skipsEmptyCollections() {
+        let syntax = Parser.parse(source: "struct Foo {}")
+        let root = buildSyntaxTree(from: syntax)!
+
+        #expect(!containsEmptyCollection(in: root))
+        #expect(!contains(in: root, typeName: "AttributeList"))
+        #expect(!contains(in: root, typeName: "DeclModifierList"))
+    }
+
+    @Test func keepsNonEmptyCollections() {
+        let syntax = Parser.parse(source: "struct Foo {}; struct Bar {}")
+        let root = buildSyntaxTree(from: syntax)!
+
+        #expect(contains(in: root, typeName: "CodeBlockItemList"))
+    }
+
+    @Test func collectionElementsHaveNoLabel() {
+        let syntax = Parser.parse(source: "struct Foo {}; struct Bar {}")
+        let root = buildSyntaxTree(from: syntax)!
+        let list = find(in: root, typeName: "CodeBlockItemList")!
+
+        #expect(!list.children.isEmpty)
+        for child in list.children {
+            #expect(child.label == nil)
+        }
+    }
+
+    @Test func layoutChildrenHaveLabels() {
+        let syntax = Parser.parse(source: "struct Foo {}")
+        let root = buildSyntaxTree(from: syntax)!
+        let structDecl = find(in: root, typeName: "StructDecl")!
+
+        let labels = structDecl.children.compactMap { $0.label }
+        #expect(labels.contains("name"))
+        #expect(labels.contains("memberBlock"))
+    }
+
+    @Test func keywordTokensAreHidden() {
+        let syntax = Parser.parse(source: "struct Foo {}")
+        let root = buildSyntaxTree(from: syntax)!
+        let structDecl = find(in: root, typeName: "StructDecl")!
+
+        let labels = structDecl.children.compactMap { $0.label }
+        #expect(!labels.contains("structKeyword"))
+    }
+
+    @Test func punctuationTokensAreHidden() {
+        let syntax = Parser.parse(source: "func f(a: Int) {}")
+        let root = buildSyntaxTree(from: syntax)!
+
+        let labels = collectLabels(in: root)
+        #expect(!labels.contains("leftParen"))
+        #expect(!labels.contains("rightParen"))
+        #expect(!labels.contains("leftBrace"))
+        #expect(!labels.contains("rightBrace"))
+        #expect(!labels.contains("colon"))
+    }
+
+    @Test func onlyIdentifierTokensAreKept() {
+        let syntax = Parser.parse(source: "let value = 42")
+        let root = buildSyntaxTree(from: syntax)!
+
+        let nameToken = find(in: root, typeName: "Token", whereLabel: "identifier")
+        #expect(nameToken?.tokenText == "value")
+
+        // The `42` integer-literal token is hidden along with the rest of the non-identifier
+        // tokens.
+        let literalToken = find(in: root, typeName: "Token", whereLabel: "literal")
+        #expect(literalToken == nil)
+    }
+
+    @Test func tokenNodesCarryText() {
+        let syntax = Parser.parse(source: "struct Foo {}")
+        let root = buildSyntaxTree(from: syntax)!
+        let structDecl = find(in: root, typeName: "StructDecl")!
+
+        let nameToken = structDecl.children.first { $0.label == "name" }!
+        #expect(nameToken.kind == .token)
+        #expect(nameToken.tokenText == "Foo")
+    }
+
+    @Test func nodeIdsAreUnique() {
+        let syntax = Parser.parse(source: """
+            struct Foo {
+                let x: Int = 1
+                func bar() {}
+            }
+            """)
+        let root = buildSyntaxTree(from: syntax)!
+
+        var seen: Set<Int> = []
+        collectIds(in: root, into: &seen)
+        let total = countNodes(in: root)
+        #expect(seen.count == total)
+    }
+}
+
+private func contains(in node: SyntaxTreeNode, typeName: String) -> Bool {
+    if node.typeName == typeName { return true }
+    return node.children.contains { contains(in: $0, typeName: typeName) }
+}
+
+private func find(in node: SyntaxTreeNode, typeName: String) -> SyntaxTreeNode? {
+    if node.typeName == typeName { return node }
+    for child in node.children {
+        if let found = find(in: child, typeName: typeName) {
+            return found
+        }
+    }
+    return nil
+}
+
+private func find(in node: SyntaxTreeNode, typeName: String, whereLabel label: String) -> SyntaxTreeNode? {
+    if node.typeName == typeName && node.label == label { return node }
+    for child in node.children {
+        if let found = find(in: child, typeName: typeName, whereLabel: label) {
+            return found
+        }
+    }
+    return nil
+}
+
+private func collectLabels(in node: SyntaxTreeNode) -> Set<String> {
+    var labels: Set<String> = []
+    if let label = node.label { labels.insert(label) }
+    for child in node.children {
+        labels.formUnion(collectLabels(in: child))
+    }
+    return labels
+}
+
+private func containsEmptyCollection(in node: SyntaxTreeNode) -> Bool {
+    if node.kind == .collection && node.children.isEmpty {
+        return true
+    }
+    return node.children.contains { containsEmptyCollection(in: $0) }
+}
+
+private func collectIds(in node: SyntaxTreeNode, into set: inout Set<Int>) {
+    set.insert(node.id)
+    for child in node.children {
+        collectIds(in: child, into: &set)
+    }
+}
+
+private func countNodes(in node: SyntaxTreeNode) -> Int {
+    1 + node.children.reduce(0) { $0 + countNodes(in: $1) }
+}

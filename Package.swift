@@ -39,7 +39,12 @@ let package = Package(
         ),
         .testTarget(
             name: "swift-syntax-scope-visualizerTests",
-            dependencies: ["swift-syntax-scope-visualizer"]
+            dependencies: [
+                "Pages",
+                "swift-syntax-scope-visualizer",
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftParser", package: "swift-syntax")
+            ]
         ),
     ],
     swiftLanguageModes: [.v6]

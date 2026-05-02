@@ -26,28 +26,8 @@ public struct RootView: Component {
                 .overflow("hidden")
         ) {
             SwiftCodeEditor(text: text, onInput: onTextChange)
-            SwiftSyntaxVisualizeView(syntax: syntax)
+            SwiftSyntaxView(syntax: syntax)
             SwiftSyntaxScopeVisualizeView(syntax: syntax)
-        }
-    }
-}
-
-internal struct SwiftSyntaxVisualizeView: Component {
-    let syntax: any SyntaxProtocol
-
-    func render() -> Node {
-        div(
-            style: .init()
-                .flex("1 1 0")
-                .minWidth("0")
-                .height("100%")
-                .overflow("auto")
-                .padding("8px")
-                .borderRight("1px solid #ddd")
-                .boxSizing("border-box")
-                .whiteSpace("pre-wrap")
-        ) {
-            syntax.debugDescription
         }
     }
 }
