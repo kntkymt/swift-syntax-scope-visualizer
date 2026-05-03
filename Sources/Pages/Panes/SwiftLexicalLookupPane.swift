@@ -16,12 +16,6 @@ internal struct LexicalLookupConfig: Hashable {
     var hideNonScope: Bool
 }
 
-private extension LexicalLookupConfig {
-    var isFiltered: Bool {
-        hideEmptyCollections || hideTokens || hideNonScope
-    }
-}
-
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
     let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
@@ -80,8 +74,8 @@ private struct SettingsButton: Component {
                     .padding("4px 10px")
                     .border("1px solid #ccc")
                     .borderRadius("4px")
-                    .backgroundColor(config.isFiltered ? "#495057" : "#fff")
-                    .color(config.isFiltered ? "#fff" : "#000")
+                    .backgroundColor("#fff")
+                    .color("#000")
                     .cursor("pointer")
                     .font("inherit"),
                 listeners: .init().click(
