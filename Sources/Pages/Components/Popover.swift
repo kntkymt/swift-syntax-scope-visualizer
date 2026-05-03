@@ -30,7 +30,7 @@ internal struct Popover: Component {
     }
 
     func render() -> Node {
-        var boxStyle: Style = anchor.positionStyle
+        var boxStyle: Style = .init()
             .padding("8px 10px")
             .backgroundColor("#fff")
             .border("1px solid #ccc")
@@ -40,7 +40,6 @@ internal struct Popover: Component {
             .flexDirection("column")
             .gap("6px")
             .whiteSpace("nowrap")
-            .zIndex("1")
 
         if scrollable {
             boxStyle =
@@ -63,8 +62,14 @@ internal struct Popover: Component {
 
         let popoverBox = div(style: boxStyle, listeners: boxListeners) { body }
 
+        // Place the arrow on the wrapper (not inside the box) so a scrollable box's
+        // `overflow: auto` doesn't clip it.
+        let wrapperChildren: [Node] =
+            anchor.hasArrow ? [Self.arrowNode(), popoverBox] : [popoverBox]
+        let wrapper = div(style: anchor.wrapperStyle.zIndex("1")) { wrapperChildren }
+
         guard let onDismiss else {
-            return popoverBox
+            return wrapper
         }
 
         return div(
@@ -77,13 +82,48 @@ internal struct Popover: Component {
                 .zIndex("10"),
             listeners: .init().click(EventListener { _ in onDismiss() })
         ) {
-            popoverBox
+            wrapper
         }
     }
 }
 
+private extension Popover {
+    static let arrowSize: Double = 16
+    static let arrowSideOffset: Double = 12
+
+    // A small box sized to the arrow that overlaps two border-triangles: the lower (outer)
+    // shows the border color, the upper (inner) is offset down by 1px so only a 1px sliver
+    // of the outer remains visible as the outline.
+    static func arrowNode() -> Node {
+        div(
+            style: .init()
+                .position("relative")
+                .marginLeft("\(arrowSideOffset)px")
+                .width("\(2 * arrowSize)px")
+                .height("\(arrowSize)px")
+        ) {
+            arrowTriangle(topPx: 0, fill: "#ccc")
+            arrowTriangle(topPx: 1, fill: "#fff")
+        }
+    }
+
+    static func arrowTriangle(topPx: Double, fill: String) -> Node {
+        div(
+            style: .init()
+                .position("absolute")
+                .top("\(topPx)px")
+                .left("0")
+                .width("0")
+                .height("0")
+                .borderLeft("\(arrowSize)px solid transparent")
+                .borderRight("\(arrowSize)px solid transparent")
+                .borderBottom("\(arrowSize)px solid \(fill)")
+        )
+    }
+}
+
 private extension Popover.Anchor {
-    var positionStyle: Style {
+    var wrapperStyle: Style {
         switch self {
         case .parentBelowRight:
             return Style()
@@ -91,10 +131,19 @@ private extension Popover.Anchor {
                 .top("calc(100% + 4px)")
                 .right("0")
         case .viewport(let x, let y):
+            // Place wrapper so the arrow tip aligns with (x, y): shift left by the arrow's
+            // own offset within the wrapper plus its half-width.
             return Style()
                 .position("fixed")
                 .top("\(y)px")
-                .left("\(x)px")
+                .left("\(x - Popover.arrowSideOffset - Popover.arrowSize)px")
+        }
+    }
+
+    var hasArrow: Bool {
+        switch self {
+        case .parentBelowRight: return false
+        case .viewport: return true
         }
     }
 }

@@ -79,14 +79,14 @@ public struct SwiftCodeEditor: Component {
         }
 
         // In click-point mode, intercept the click on the textarea, translate the caret
-        // position (UTF-16) to a UTF-8 byte offset, and forward it together with the pointer's
-        // viewport coordinates so callers can anchor UI at the click site.
+        // position (UTF-16) to a UTF-8 byte offset, and report the on-screen anchor of that
+        // caret (not the raw mouse coordinates) so callers can pin UI to the source position
+        // itself — important when the user clicks past line ends.
         let onClick = EventListener { (event) in
             guard isClickPointMode, let onClickPoint else { return }
             let utf16Offset = Int(event.jsValue.target.selectionStart.number ?? 0)
             guard let utf8Offset = utf16OffsetToUtf8Offset(utf16Offset) else { return }
-            let clientX = event.jsValue.clientX.number ?? 0
-            let clientY = event.jsValue.clientY.number ?? 0
+            let (clientX, clientY) = caretAnchorPoint(atUtf16Offset: utf16Offset)
             onClickPoint(ClickPointInfo(utf8Offset: utf8Offset, clientX: clientX, clientY: clientY))
         }
 
@@ -233,6 +233,24 @@ private extension SwiftCodeEditor {
         let utf16Index = utf16.index(utf16.startIndex, offsetBy: utf16Offset)
         guard let stringIndex = String.Index(utf16Index, within: text) else { return nil }
         return text.utf8.distance(from: text.utf8.startIndex, to: stringIndex)
+    }
+
+    // Resolve the viewport coordinates of the caret at `utf16Offset` by collapsing a DOM Range
+    // on the overlay's transparent text node. Returns the bottom-left corner so anchored UI
+    // sits just below the caret line.
+    func caretAnchorPoint(atUtf16Offset utf16Offset: Int) -> (Double, Double) {
+        guard let overlay = overlayRef else { return (0, 0) }
+        let textNode: JSValue = overlay.jsValue.firstChild
+        guard Int(textNode.nodeType.number ?? 0) == 3 else { return (0, 0) }
+
+        let range = JSWindow.global.document.jsValue.createRange()
+        _ = range.setStart(textNode, JSValue.number(Double(utf16Offset)))
+        _ = range.setEnd(textNode, JSValue.number(Double(utf16Offset)))
+
+        let bounds = range.getBoundingClientRect()
+        let left = bounds.left.number ?? 0
+        let bottom = bounds.bottom.number ?? 0
+        return (left, bottom)
     }
 
     func installHighlightRects() -> [JSValue] {
