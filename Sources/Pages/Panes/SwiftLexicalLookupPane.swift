@@ -137,7 +137,7 @@ private struct SyntaxTreeNodeView: Component {
         // Avoid declaring `scopeDebugName` on `SyntaxProtocol`: it shadows the
         // `ScopeSyntax` requirement of the same name and recurses infinitely.
         let scope = Syntax(node).asProtocol(SyntaxProtocol.self) as? ScopeSyntax
-        let typeColor = node.isScope ? "#c92a2a" : "#0a66c2"
+        let typeColor = node.isScope ? Color.red : Color.blue
         let introducedNames = node.introducedNames
         let introducedNamesToParent = node.introducedNamesToParent
         let declNames = node.declNames
@@ -156,7 +156,7 @@ private struct SyntaxTreeNodeView: Component {
                     span(
                         style: .init()
                             .marginLeft("4px")
-                            .color("#666")
+                            .color(Color.secondary)
                     ) {
                         token.tokenKind == .endOfFile ? ".eof" : "\"\(token.text)\""
                     }
@@ -166,7 +166,7 @@ private struct SyntaxTreeNodeView: Component {
                     span(
                         style: .init()
                             .marginLeft("8px")
-                            .color("#666")
+                            .color(Color.secondary)
                     ) {
                         declNames.lazy.map { "\"\($0)\"" }.joined(separator: ", ")
                     }
@@ -175,7 +175,7 @@ private struct SyntaxTreeNodeView: Component {
                 span(
                     style: .init()
                         .marginLeft("8px")
-                        .color("#666")
+                        .color(Color.secondary)
                 ) {
                     node.sourceRange(converter: converter).description
                 }
@@ -184,7 +184,7 @@ private struct SyntaxTreeNodeView: Component {
                     span(
                         style: .init()
                             .marginLeft("8px")
-                            .color("#666")
+                            .color(Color.secondary)
                     ) {
                         "introduces=[\(introducedNames.joined(separator: ", "))]"
                     }
@@ -194,7 +194,7 @@ private struct SyntaxTreeNodeView: Component {
                     span(
                         style: .init()
                             .marginLeft("8px")
-                            .color("#666")
+                            .color(Color.secondary)
                     ) {
                         "introducesToParent=[\(introducedNamesToParent.joined(separator: ", "))]"
                     }

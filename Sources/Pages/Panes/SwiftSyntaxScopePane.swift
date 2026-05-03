@@ -34,7 +34,7 @@ private struct ScopeTreeNodeView: Component {
 
         return HoverHighlight {
             Accordion {
-                span(style: .init().color("#c92a2a")) {
+                span(style: .init().color(Color.red)) {
                     scope.scopeTypeDescription
                 }
 
@@ -42,7 +42,7 @@ private struct ScopeTreeNodeView: Component {
                     span(
                         style: .init()
                             .marginLeft("8px")
-                            .color("#666")
+                            .color(Color.secondary)
                     ) {
                         scope.syntax.declNames.lazy.map { "\"\($0)\"" }.joined(separator: ", ")
                     }
@@ -51,7 +51,7 @@ private struct ScopeTreeNodeView: Component {
                 span(
                     style: .init()
                         .marginLeft("8px")
-                        .color("#666")
+                        .color(Color.secondary)
                 ) {
                     scope.rangeDescription
                 }
@@ -60,7 +60,7 @@ private struct ScopeTreeNodeView: Component {
                     span(
                         style: .init()
                             .marginLeft("8px")
-                            .color("#666")
+                            .color(Color.secondary)
                     ) {
                         "introduces=[\(names.map { "\($0.kind):\($0.text)" }.joined(separator: ", "))]"
                     }
