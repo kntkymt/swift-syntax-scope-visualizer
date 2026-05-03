@@ -120,11 +120,16 @@ struct ParsedSource: Equatable {
     }
 }
 
+internal struct LookupResultName: Hashable {
+    var label: String
+    var range: String
+}
+
 internal struct LookupResultData: Equatable {
     var clientX: Double
     var clientY: Double
-    var lexicalLookupNames: [String]
-    var syntaxScopeNames: [String]
+    var lexicalLookupNames: [LookupResultName]
+    var syntaxScopeNames: [LookupResultName]
 }
 
 private extension SourceFileSyntax {
@@ -134,6 +139,7 @@ private extension SourceFileSyntax {
     ) -> LookupResultData {
         let position = AbsolutePosition(utf8Offset: info.utf8Offset)
         let identifier = config.name.asLookupIdentifier
+        let converter = SourceLocationConverter(fileName: "", tree: root)
         let lexicalConfig = SwiftLexicalLookup.LookupConfig(
             finishInSequentialScope: config.swiftLexicalLookup.finishInSequentialScope
         )
@@ -144,14 +150,24 @@ private extension SourceFileSyntax {
             (token(at: position)?.lookup(identifier, with: lexicalConfig) ?? [])
             .flatMap(\.names)
             .flatMap(\.flattened)
-            .map(\.displayDescription)
+            .map { name in
+                LookupResultName(
+                    label: name.displayDescription,
+                    range: name.syntax.sourceRange(converter: converter).description
+                )
+            }
 
         let syntaxScopeNames = lexicalLookup(
             position: position,
             name: identifier,
             options: options
         )
-        .map { "\($0.kind):\($0.text)" }
+        .map { name in
+            LookupResultName(
+                label: "\(name.kind):\(name.text)",
+                range: name.syntax.sourceRange(converter: converter).description
+            )
+        }
 
         return LookupResultData(
             clientX: info.clientX,

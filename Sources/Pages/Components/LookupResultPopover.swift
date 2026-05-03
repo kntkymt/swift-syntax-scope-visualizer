@@ -4,8 +4,8 @@ internal struct LookupResultPopover: Component {
     internal init(
         clientX: Double,
         clientY: Double,
-        lexicalLookupNames: [String],
-        syntaxScopeNames: [String],
+        lexicalLookupNames: [LookupResultName],
+        syntaxScopeNames: [LookupResultName],
         onClose: Function<Void>
     ) {
         self.clientX = clientX
@@ -17,8 +17,8 @@ internal struct LookupResultPopover: Component {
 
     private var clientX: Double
     private var clientY: Double
-    private var lexicalLookupNames: [String]
-    private var syntaxScopeNames: [String]
+    private var lexicalLookupNames: [LookupResultName]
+    private var syntaxScopeNames: [LookupResultName]
     private var onClose: Function<Void>
 
     var deps: Deps? {
@@ -51,7 +51,7 @@ private struct LookupResultSection: Component {
     }
 
     let title: String
-    let names: [String]
+    let names: [LookupResultName]
 
     func render() -> Node {
         div(
@@ -65,8 +65,17 @@ private struct LookupResultSection: Component {
             if names.isEmpty {
                 div(style: .init().color(Color.secondary)) { "(no names)" }
             } else {
-                names.map { (name) in
-                    div(key: name) { name }
+                Array(names.enumerated()).map { (index, name) in
+                    div(key: index) {
+                        span { name.label }
+                        span(
+                            style: .init()
+                                .marginLeft("8px")
+                                .color(Color.secondary)
+                        ) {
+                            name.range
+                        }
+                    }
                 }
             }
         }
