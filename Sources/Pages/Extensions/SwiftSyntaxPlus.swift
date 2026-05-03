@@ -1,13 +1,5 @@
 import SwiftSyntax
 
-internal extension Range<AbsolutePosition> {
-    func description(converter: SourceLocationConverter) -> String {
-        let lower = converter.location(for: lowerBound)
-        let upper = converter.location(for: upperBound)
-        return "[\(lower.line):\(lower.column) - \(upper.line):\(upper.column)]"
-    }
-}
-
 internal extension SyntaxProtocol {
     var declNames: [String] {
         if let extensionDecl = self.as(ExtensionDeclSyntax.self),
@@ -17,5 +9,14 @@ internal extension SyntaxProtocol {
         }
 
         return Syntax(self).introducedNameTexts
+    }
+}
+
+extension SourceRange {
+    var description: String {
+        // SourceRange uses half-open (..<) semantics; render the upper bound
+        // inclusively for display.
+        let displayedEndColumn = start == end ? end.column : end.column - 1
+        return "[\(start.line):\(start.column) - \(end.line):\(displayedEndColumn)]"
     }
 }

@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kntkymt/swift-syntax-scope.git",
       "state" : {
-        "revision" : "008a0c82e506cd908562115dc5dd26176687ffbb",
-        "version" : "0.0.2"
+        "revision" : "fab9a61505cfd644ce39a53c65feaa41dd24238b",
+        "version" : "0.0.3"
       }
     }
   ],

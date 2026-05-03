@@ -53,7 +53,7 @@ private struct ScopeTreeNodeView: Component {
                         .marginLeft("8px")
                         .color("#666")
                 ) {
-                    scope.sourceRangeDescription
+                    scope.rangeDescription
                 }
 
                 if !names.isEmpty {
@@ -75,7 +75,8 @@ private struct ScopeTreeNodeView: Component {
 }
 
 private extension SyntaxScopeProtocol {
-    var sourceRangeDescription: String {
-        sourceRange.description(converter: sourceLocationConverter)
+    var rangeDescription: String {
+        let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
+        return sourceRange(converter: converter).description
     }
 }

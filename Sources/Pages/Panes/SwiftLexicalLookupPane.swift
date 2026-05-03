@@ -176,7 +176,7 @@ private struct SyntaxTreeNodeView: Component {
                         .marginLeft("8px")
                         .color("#666")
                 ) {
-                    node.range.description(converter: converter)
+                    node.sourceRange(converter: converter).description
                 }
 
                 if !introducedNames.isEmpty {
