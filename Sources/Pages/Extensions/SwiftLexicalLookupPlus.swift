@@ -11,6 +11,31 @@ internal extension Range<AbsolutePosition> {
     }
 }
 
+internal extension LookupName {
+    // Flatten `equivalentNames` so each entry maps 1:1 to a displayable name.
+    var flattened: [LookupName] {
+        switch self {
+        case .equivalentNames(let names):
+            return names.flatMap(\.flattened)
+        default:
+            return [self]
+        }
+    }
+
+    var kindLabel: String {
+        switch self {
+        case .identifier: return "identifier"
+        case .declaration: return "declaration"
+        case .implicit: return "implicit"
+        case .equivalentNames: return "equivalent"
+        }
+    }
+
+    var displayDescription: String {
+        "\(kindLabel):\(identifier.name)"
+    }
+}
+
 internal extension ScopeSyntax {
     // Run lookup at the scope's end with `finishInSequentialScope: true` so a
     // SequentialScopeSyntax (CodeBlock / SourceFile / ...) folds in names from

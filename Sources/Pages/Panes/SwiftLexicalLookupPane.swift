@@ -268,7 +268,7 @@ internal extension SyntaxProtocol {
         guard
             let scope = Syntax(self).asProtocol(SyntaxProtocol.self) as? ScopeSyntax
         else { return [] }
-        return scope.lookupAtScopeEnd().map { $0.identifier.name }
+        return scope.lookupAtScopeEnd().flatMap(\.flattened).map(\.displayDescription)
     }
 
     var introducedNamesToParent: [String] {

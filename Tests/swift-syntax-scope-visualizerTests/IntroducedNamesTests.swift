@@ -16,7 +16,7 @@ import SwiftSyntax
         let funcDecl = find(in: Syntax(syntax), typeName: "FunctionDeclSyntax")!
 
         #expect(funcDecl.isScope)
-        #expect(funcDecl.introducedNames == ["a", "b"])
+        #expect(funcDecl.introducedNames == ["identifier:a", "identifier:b"])
     }
 
     @Test func codeBlockIntroducesLocalBindings() {
@@ -24,7 +24,7 @@ import SwiftSyntax
         let codeBlock = find(in: Syntax(syntax), typeName: "CodeBlockSyntax")!
 
         #expect(codeBlock.isScope)
-        #expect(codeBlock.introducedNames == ["x", "y"])
+        #expect(codeBlock.introducedNames == ["identifier:x", "identifier:y"])
     }
 
     @Test func nonScopeNodeHasEmptyIntroducedNames() {
@@ -62,7 +62,7 @@ import SwiftSyntax
         )
         let codeBlock = find(in: Syntax(syntax), typeName: "CodeBlockSyntax")!
 
-        #expect(codeBlock.introducedNames == ["a", "b", "c"])
+        #expect(codeBlock.introducedNames == ["identifier:a", "identifier:b", "identifier:c"])
     }
 
     @Test func guardStmtIntroducesBindingsToParent() {
@@ -115,7 +115,7 @@ import SwiftSyntax
         )
         let ifExpr = find(in: Syntax(syntax), typeName: "IfExprSyntax")!
 
-        #expect(ifExpr.introducedNames.contains("a"))
+        #expect(ifExpr.introducedNames.contains("identifier:a"))
     }
 
     @Test func ifExprWithElseIfIntroducesOuterOptionalBinding() {
@@ -132,7 +132,7 @@ import SwiftSyntax
         )
         let outerIf = find(in: Syntax(syntax), typeName: "IfExprSyntax")!
 
-        #expect(outerIf.introducedNames.contains("a"))
+        #expect(outerIf.introducedNames.contains("identifier:a"))
     }
 
     @Test func ifExprWithPlainElseIntroducesOptionalBinding() {
@@ -149,7 +149,7 @@ import SwiftSyntax
         )
         let ifExpr = find(in: Syntax(syntax), typeName: "IfExprSyntax")!
 
-        #expect(ifExpr.introducedNames.contains("a"))
+        #expect(ifExpr.introducedNames.contains("identifier:a"))
     }
 
     @Test func ifExprWithElseIntroducesMultipleOptionalBindings() {
@@ -166,8 +166,8 @@ import SwiftSyntax
         )
         let ifExpr = find(in: Syntax(syntax), typeName: "IfExprSyntax")!
 
-        #expect(ifExpr.introducedNames.contains("a"))
-        #expect(ifExpr.introducedNames.contains("b"))
+        #expect(ifExpr.introducedNames.contains("identifier:a"))
+        #expect(ifExpr.introducedNames.contains("identifier:b"))
     }
 }
 

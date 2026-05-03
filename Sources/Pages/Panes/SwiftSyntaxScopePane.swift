@@ -62,7 +62,7 @@ private struct ScopeTreeNodeView: Component {
                             .marginLeft("8px")
                             .color("#666")
                     ) {
-                        "introduces=[\(names.map(\.text).joined(separator: ", "))]"
+                        "introduces=[\(names.map { "\($0.kind):\($0.text)" }.joined(separator: ", "))]"
                     }
                 }
             } body: {
