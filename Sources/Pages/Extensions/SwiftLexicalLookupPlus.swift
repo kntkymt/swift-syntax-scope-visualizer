@@ -56,7 +56,7 @@ internal extension ScopeSyntax {
             position = trimmedRange.displayedUpperBound
         }
 
-        let config = LookupConfig(finishInSequentialScope: true)
+        let config = SwiftLexicalLookup.LookupConfig(finishInSequentialScope: true)
         let ownId = Syntax(self).id
 
         return lookup(nil, at: position, with: config)

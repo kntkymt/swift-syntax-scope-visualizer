@@ -11,10 +11,12 @@ public struct RootView: Component {
     @State var text: String = ""
     @State var parsed: ParsedSource = .init(text: "", syntax: Parser.parse(source: ""))
     @State var highlightedRange: Range<AbsolutePosition>? = nil
+    @State var lookupConfig: LookupConfig = .default
     @State var lookupResult: LookupResultData? = nil
     @Effect var parseEffect
     @Callback var onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
     @Callback var onLookup: Function<Void, ClickPointInfo>
+    @Callback var onLookupConfigChange: Function<Void, LookupConfig>
     @Callback var onLookupClose: Function<Void>
 
     public init() {}
@@ -42,8 +44,15 @@ public struct RootView: Component {
             self.highlightedRange = range
         }
 
-        $onLookup(deps: [parsed.syntax.id]) { (info) in
-            self.lookupResult = parsed.syntax.makeLookupResult(info: info)
+        $onLookup(deps: [parsed.syntax.id, lookupConfig]) { (info) in
+            self.lookupResult = parsed.syntax.makeLookupResult(
+                info: info,
+                config: lookupConfig
+            )
+        }
+
+        $onLookupConfigChange(deps: []) { (newConfig) in
+            self.lookupConfig = newConfig
         }
 
         $onLookupClose(deps: []) {
@@ -73,8 +82,10 @@ public struct RootView: Component {
                         highlightRange: highlightedRange.map {
                             $0.lowerBound.utf8Offset..<$0.upperBound.utf8Offset
                         },
+                        lookupConfig: lookupConfig,
                         onInput: onTextChange,
-                        onLookup: onLookup
+                        onLookup: onLookup,
+                        onLookupConfigChange: onLookupConfigChange
                     )
                     SwiftLexicalLookupPane(
                         syntax: parsed.syntax,
@@ -117,18 +128,28 @@ internal struct LookupResultData: Equatable {
 }
 
 private extension SourceFileSyntax {
-    func makeLookupResult(info: ClickPointInfo) -> LookupResultData {
+    func makeLookupResult(
+        info: ClickPointInfo,
+        config: LookupConfig
+    ) -> LookupResultData {
         let position = AbsolutePosition(utf8Offset: info.utf8Offset)
+        let identifier = config.name.asLookupIdentifier
+        let lexicalConfig = SwiftLexicalLookup.LookupConfig(
+            finishInSequentialScope: config.swiftLexicalLookup.finishInSequentialScope
+        )
+        let options: LookupOptions =
+            config.swiftSyntaxScope.includeOuterResults ? .includeOuterResults : []
 
-        let lexicalLookupNames = (token(at: position)?.lookup(nil) ?? [])
+        let lexicalLookupNames =
+            (token(at: position)?.lookup(identifier, with: lexicalConfig) ?? [])
             .flatMap(\.names)
             .flatMap(\.flattened)
             .map(\.displayDescription)
 
         let syntaxScopeNames = lexicalLookup(
             position: position,
-            name: nil,
-            options: .includeOuterResults
+            name: identifier,
+            options: options
         )
         .map { "\($0.kind):\($0.text)" }
 
@@ -138,5 +159,18 @@ private extension SourceFileSyntax {
             lexicalLookupNames: lexicalLookupNames,
             syntaxScopeNames: syntaxScopeNames
         )
+    }
+}
+
+private extension String {
+    // Parse the user-entered text as Swift source and pull out the first identifier-like
+    // token. Empty / whitespace-only / non-identifier inputs return nil so lookup falls back
+    // to "all names at this position".
+    var asLookupIdentifier: Identifier? {
+        guard !isEmpty else { return nil }
+        let parsed = Parser.parse(source: self)
+        return parsed.tokens(viewMode: .sourceAccurate)
+            .first { $0.tokenKind != .endOfFile }
+            .flatMap { Identifier($0) }
     }
 }
