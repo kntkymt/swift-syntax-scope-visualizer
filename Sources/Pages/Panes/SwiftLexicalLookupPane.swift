@@ -3,10 +3,20 @@
 import React
 
 internal struct LexicalLookupConfig: Hashable {
-    var hideEmptyCollections: Bool = true
-    var hideTokens: Bool = true
-    var hideNonScope: Bool = false
+    static var `default`: LexicalLookupConfig {
+        LexicalLookupConfig(
+            hideEmptyCollections: true,
+            hideTokens: true,
+            hideNonScope: false
+        )
+    }
 
+    var hideEmptyCollections: Bool
+    var hideTokens: Bool
+    var hideNonScope: Bool
+}
+
+private extension LexicalLookupConfig {
     var isFiltered: Bool {
         hideEmptyCollections || hideTokens || hideNonScope
     }
@@ -15,7 +25,7 @@ internal struct LexicalLookupConfig: Hashable {
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
 
-    @State var config: LexicalLookupConfig = .init()
+    @State var config: LexicalLookupConfig = .default
     @Callback var onConfigChange: Function<Void, LexicalLookupConfig>
 
     var deps: Deps? {
