@@ -10,7 +10,7 @@ internal struct SwiftCodeEditorPane: Component {
     }
 
     func render() -> Node {
-        Pane(title: "Swift Syntax Scope Visualizer", scrollable: false) {
+        Pane(title: "Source Code", scrollable: false) {
             SwiftCodeEditor(text: text, onInput: onInput)
         }
     }

@@ -37,9 +37,22 @@ public struct RootView: Component {
                 .height("100vh")
                 .overflow("hidden")
         ) {
-            SwiftCodeEditorPane(text: text, onInput: onTextChange)
-            SwiftLexicalLookupPane(syntax: parsed.syntax)
-            SwiftSyntaxScopePane(syntax: parsed.syntax)
+            Pane(
+                title: "Swift Syntax Scope Visualizer",
+                showRightBorder: false,
+                scrollable: false
+            ) {
+                div(
+                    style: .init()
+                        .display("flex")
+                        .flexDirection("row")
+                        .height("100%")
+                ) {
+                    SwiftCodeEditorPane(text: text, onInput: onTextChange)
+                    SwiftLexicalLookupPane(syntax: parsed.syntax)
+                    SwiftSyntaxScopePane(syntax: parsed.syntax)
+                }
+            }
         }
     }
 }
