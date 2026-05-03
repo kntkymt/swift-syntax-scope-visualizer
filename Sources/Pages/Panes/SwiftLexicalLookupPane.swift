@@ -2,12 +2,20 @@
 @_spi(Experimental) import SwiftLexicalLookup
 import React
 
+internal struct LexicalLookupConfig: Hashable {
+    var hideEmptyCollections: Bool = true
+    var hideTokens: Bool = true
+    var hideNonScope: Bool = false
+
+    var isFiltered: Bool {
+        hideEmptyCollections || hideTokens || hideNonScope
+    }
+}
+
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
 
-    @State var hideEmptyCollections: Bool = true
-    @State var hideTokens: Bool = true
-    @State var hideNonScope: Bool = false
+    @State var config: LexicalLookupConfig = .init()
     @State var isPopoverOpen: Bool = false
 
     var deps: Deps? {
@@ -16,19 +24,18 @@ internal struct SwiftLexicalLookupPane: Component {
 
     func render() -> Node {
         let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
-        let isFiltered = hideEmptyCollections || hideTokens || hideNonScope
 
         let onTogglePopover = EventListener { _ in
             isPopoverOpen.toggle()
         }
         let onToggleEmptyCollections = EventListener { _ in
-            hideEmptyCollections.toggle()
+            config.hideEmptyCollections.toggle()
         }
         let onToggleTokens = EventListener { _ in
-            hideTokens.toggle()
+            config.hideTokens.toggle()
         }
         let onToggleNonScope = EventListener { _ in
-            hideNonScope.toggle()
+            config.hideNonScope.toggle()
         }
 
         return Pane(
@@ -41,20 +48,18 @@ internal struct SwiftLexicalLookupPane: Component {
                             .padding("4px 10px")
                             .border("1px solid #ccc")
                             .borderRadius("4px")
-                            .backgroundColor(isFiltered ? "#495057" : "#fff")
-                            .color(isFiltered ? "#fff" : "#000")
+                            .backgroundColor(config.isFiltered ? "#495057" : "#fff")
+                            .color(config.isFiltered ? "#fff" : "#000")
                             .cursor("pointer")
                             .font("inherit"),
                         listeners: .init().click(onTogglePopover)
                     ) {
-                        "Visible Nodes"
+                        "Settings"
                     }
 
                     if isPopoverOpen {
-                        VisibilityPopover(
-                            hideEmptyCollections: hideEmptyCollections,
-                            hideTokens: hideTokens,
-                            hideNonScope: hideNonScope,
+                        SettingsPopover(
+                            config: config,
                             onToggleEmptyCollections: onToggleEmptyCollections,
                             onToggleTokens: onToggleTokens,
                             onToggleNonScope: onToggleNonScope
@@ -67,9 +72,7 @@ internal struct SwiftLexicalLookupPane: Component {
                 SyntaxTreeNodeView(
                     node: syntax,
                     converter: converter,
-                    hideEmptyCollections: hideEmptyCollections,
-                    hideTokens: hideTokens,
-                    hideNonScope: hideNonScope
+                    config: config
                 )
             }
         }
@@ -80,14 +83,12 @@ private struct SyntaxTreeNodeView: Component {
     var key: AnyHashable? { node.id }
 
     var deps: Deps? {
-        [node.id, ObjectIdentifier(converter), hideEmptyCollections, hideTokens, hideNonScope]
+        [node.id, ObjectIdentifier(converter), config]
     }
 
     let node: any SyntaxProtocol
     let converter: SourceLocationConverter
-    let hideEmptyCollections: Bool
-    let hideTokens: Bool
-    let hideNonScope: Bool
+    let config: LexicalLookupConfig
 
     func render() -> Node {
         // Avoid declaring `scopeDebugName` on `SyntaxProtocol`: it shadows the
@@ -156,17 +157,11 @@ private struct SyntaxTreeNodeView: Component {
                     }
                 }
             } body: {
-                node.visibleChildren(
-                    hideEmptyCollections: hideEmptyCollections,
-                    hideTokens: hideTokens,
-                    hideNonScope: hideNonScope
-                ).map { (child) in
+                node.visibleChildren(config: config).map { (child) in
                     SyntaxTreeNodeView(
                         node: child,
                         converter: converter,
-                        hideEmptyCollections: hideEmptyCollections,
-                        hideTokens: hideTokens,
-                        hideNonScope: hideNonScope
+                        config: config
                     )
                 }
             }
@@ -174,17 +169,15 @@ private struct SyntaxTreeNodeView: Component {
     }
 }
 
-private struct VisibilityPopover: Component {
+private struct SettingsPopover: Component {
     var deps: Deps? {
         [
-            hideEmptyCollections, hideTokens, hideNonScope,
+            config,
             onToggleEmptyCollections, onToggleTokens, onToggleNonScope,
         ]
     }
 
-    let hideEmptyCollections: Bool
-    let hideTokens: Bool
-    let hideNonScope: Bool
+    let config: LexicalLookupConfig
     let onToggleEmptyCollections: EventListener
     let onToggleTokens: EventListener
     let onToggleNonScope: EventListener
@@ -203,28 +196,29 @@ private struct VisibilityPopover: Component {
                 .display("flex")
                 .flexDirection("column")
                 .gap("6px")
+                .whiteSpace("nowrap")
                 .zIndex("1")
         ) {
-            VisibilityCheckbox(
-                text: "Empty Collections",
-                checked: !hideEmptyCollections,
+            SettingsCheckbox(
+                text: "Hide Empty Collections",
+                checked: config.hideEmptyCollections,
                 onToggle: onToggleEmptyCollections
             )
-            VisibilityCheckbox(
-                text: "Tokens",
-                checked: !hideTokens,
+            SettingsCheckbox(
+                text: "Hide Tokens",
+                checked: config.hideTokens,
                 onToggle: onToggleTokens
             )
-            VisibilityCheckbox(
-                text: "Non-Scope",
-                checked: !hideNonScope,
+            SettingsCheckbox(
+                text: "Hide Non-Scope",
+                checked: config.hideNonScope,
                 onToggle: onToggleNonScope
             )
         }
     }
 }
 
-private struct VisibilityCheckbox: Component {
+private struct SettingsCheckbox: Component {
     var key: AnyHashable? { text }
 
     var deps: Deps? {
@@ -277,29 +271,21 @@ internal extension SyntaxProtocol {
 
     // Lift scope descendants of hidden non-scope children up to this level so the
     // visible tree only contains scope nodes while preserving ancestor order.
-    func visibleChildren(
-        hideEmptyCollections: Bool,
-        hideTokens: Bool,
-        hideNonScope: Bool
-    ) -> [Syntax] {
+    func visibleChildren(config: LexicalLookupConfig) -> [Syntax] {
         children(viewMode: .sourceAccurate).flatMap { (child) -> [Syntax] in
-            if hideEmptyCollections,
+            if config.hideEmptyCollections,
                 child.syntaxNodeType.structure.isCollection,
                 child.children(viewMode: .sourceAccurate).isEmpty
             {
                 return []
             }
 
-            if hideTokens, child.is(TokenSyntax.self) {
+            if config.hideTokens, child.is(TokenSyntax.self) {
                 return []
             }
 
-            if hideNonScope, !child.isScope {
-                return child.visibleChildren(
-                    hideEmptyCollections: hideEmptyCollections,
-                    hideTokens: hideTokens,
-                    hideNonScope: hideNonScope
-                )
+            if config.hideNonScope, !child.isScope {
+                return child.visibleChildren(config: config)
             }
 
             return [child]

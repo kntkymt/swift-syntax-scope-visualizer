@@ -9,9 +9,11 @@ import SwiftSyntax
         let structDecl = find(in: Syntax(syntax), typeName: "StructDeclSyntax")!
 
         let visible = structDecl.visibleChildren(
-            hideEmptyCollections: true,
-            hideTokens: false,
-            hideNonScope: false
+            config: LexicalLookupConfig(
+                hideEmptyCollections: true,
+                hideTokens: false,
+                hideNonScope: false
+            )
         )
 
         #expect(!visible.contains { $0.is(AttributeListSyntax.self) })
@@ -23,9 +25,11 @@ import SwiftSyntax
         let structDecl = find(in: Syntax(syntax), typeName: "StructDeclSyntax")!
 
         let visible = structDecl.visibleChildren(
-            hideEmptyCollections: false,
-            hideTokens: false,
-            hideNonScope: false
+            config: LexicalLookupConfig(
+                hideEmptyCollections: false,
+                hideTokens: false,
+                hideNonScope: false
+            )
         )
 
         #expect(visible.contains { $0.is(AttributeListSyntax.self) })
@@ -37,9 +41,11 @@ import SwiftSyntax
         let structDecl = find(in: Syntax(syntax), typeName: "StructDeclSyntax")!
 
         let visible = structDecl.visibleChildren(
-            hideEmptyCollections: false,
-            hideTokens: true,
-            hideNonScope: false
+            config: LexicalLookupConfig(
+                hideEmptyCollections: false,
+                hideTokens: true,
+                hideNonScope: false
+            )
         )
 
         #expect(!visible.contains { $0.is(TokenSyntax.self) })
@@ -50,9 +56,11 @@ import SwiftSyntax
         let structDecl = find(in: Syntax(syntax), typeName: "StructDeclSyntax")!
 
         let visible = structDecl.visibleChildren(
-            hideEmptyCollections: false,
-            hideTokens: false,
-            hideNonScope: false
+            config: LexicalLookupConfig(
+                hideEmptyCollections: false,
+                hideTokens: false,
+                hideNonScope: false
+            )
         )
 
         #expect(visible.contains { $0.is(TokenSyntax.self) })
@@ -64,9 +72,11 @@ import SwiftSyntax
         // SourceFile (Scope) の直接の子は CodeBlockItemList (Non-Scope) と eofToken。
         // hideNonScope を立てると CodeBlockItemList は子の StructDecl (Scope) に置き換わる。
         let visible = Syntax(syntax).visibleChildren(
-            hideEmptyCollections: false,
-            hideTokens: true,
-            hideNonScope: true
+            config: LexicalLookupConfig(
+                hideEmptyCollections: false,
+                hideTokens: true,
+                hideNonScope: true
+            )
         )
 
         #expect(!visible.contains { $0.is(CodeBlockItemListSyntax.self) })
@@ -77,9 +87,11 @@ import SwiftSyntax
         let syntax = Parser.parse(source: "struct Foo {}")
 
         let visible = Syntax(syntax).visibleChildren(
-            hideEmptyCollections: false,
-            hideTokens: true,
-            hideNonScope: false
+            config: LexicalLookupConfig(
+                hideEmptyCollections: false,
+                hideTokens: true,
+                hideNonScope: false
+            )
         )
 
         #expect(visible.contains { $0.is(CodeBlockItemListSyntax.self) })
@@ -97,9 +109,11 @@ import SwiftSyntax
         // SourceFile から見て CodeBlockItemList(Non-Scope) -> CodeBlockItem(Non-Scope)
         // -> FunctionDecl(Scope) と辿る。3フラグ全有効で FunctionDecl が直下に持ち上がる。
         let visible = Syntax(syntax).visibleChildren(
-            hideEmptyCollections: true,
-            hideTokens: true,
-            hideNonScope: true
+            config: LexicalLookupConfig(
+                hideEmptyCollections: true,
+                hideTokens: true,
+                hideNonScope: true
+            )
         )
 
         #expect(visible.count == 1)
