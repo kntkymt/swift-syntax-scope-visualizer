@@ -3,20 +3,23 @@ import React
 internal struct HoverHighlight: Component {
 
     private var highlightColor: String
+    private var onHoverChange: Function<Void, Bool>?
     private var children: [Node]
 
     @State private var isHovered: Bool = false
 
     internal init(
         highlightColor: String = "rgba(100, 149, 237, 0.25)",
+        onHoverChange: Function<Void, Bool>? = nil,
         @ChildrenBuilder children: () -> [Node] = { [] }
     ) {
         self.highlightColor = highlightColor
+        self.onHoverChange = onHoverChange
         self.children = children()
     }
 
     var deps: Deps? {
-        [highlightColor, children.deps]
+        [highlightColor, onHoverChange, children.deps]
     }
 
     func render() -> Node {
@@ -26,10 +29,12 @@ internal struct HoverHighlight: Component {
         let onMouseOver = EventListener { (event) in
             _ = event.jsValue.stopPropagation()
             self.isHovered = true
+            onHoverChange?(true)
         }
         let onMouseOut = EventListener { (event) in
             _ = event.jsValue.stopPropagation()
             self.isHovered = false
+            onHoverChange?(false)
         }
 
         return div(

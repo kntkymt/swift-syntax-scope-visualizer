@@ -24,12 +24,13 @@ private extension LexicalLookupConfig {
 
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
+    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
 
     @State var config: LexicalLookupConfig = .default
     @Callback var onConfigChange: Function<Void, LexicalLookupConfig>
 
     var deps: Deps? {
-        [syntax.id]
+        [syntax.id, onHoverRangeChange]
     }
 
     func render() -> Node {
@@ -54,7 +55,8 @@ internal struct SwiftLexicalLookupPane: Component {
                 SyntaxTreeNodeView(
                     node: syntax,
                     converter: converter,
-                    config: config
+                    config: config,
+                    onHoverRangeChange: onHoverRangeChange
                 )
             }
         }
@@ -126,12 +128,15 @@ private struct SyntaxTreeNodeView: Component {
     var key: AnyHashable? { node.id }
 
     var deps: Deps? {
-        [node.id, ObjectIdentifier(converter), config]
+        [node.id, ObjectIdentifier(converter), config, onHoverRangeChange]
     }
 
     let node: any SyntaxProtocol
     let converter: SourceLocationConverter
     let config: LexicalLookupConfig
+    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+
+    @Callback var onHoverChange: Function<Void, Bool>
 
     func render() -> Node {
         // Avoid declaring `scopeDebugName` on `SyntaxProtocol`: it shadows the
@@ -142,7 +147,11 @@ private struct SyntaxTreeNodeView: Component {
         let introducedNamesToParent = node.introducedNamesToParent
         let declNames = node.declNames
 
-        return HoverHighlight {
+        $onHoverChange(deps: [node.id, onHoverRangeChange]) { (isHovered) in
+            onHoverRangeChange(isHovered ? node.trimmedRange : nil)
+        }
+
+        return HoverHighlight(onHoverChange: onHoverChange) {
             Accordion {
                 span(style: .init().color(typeColor)) {
                     if let scopeDebugName = scope?.scopeDebugName {
@@ -204,7 +213,8 @@ private struct SyntaxTreeNodeView: Component {
                     SyntaxTreeNodeView(
                         node: child,
                         converter: converter,
-                        config: config
+                        config: config,
+                        onHoverRangeChange: onHoverRangeChange
                     )
                 }
             }

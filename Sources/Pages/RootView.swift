@@ -7,7 +7,9 @@ public struct RootView: Component {
 
     @State var text: String = ""
     @State var parsed: ParsedSource = .init(text: "", syntax: Parser.parse(source: ""))
+    @State var highlightedRange: Range<AbsolutePosition>? = nil
     @Effect var parseEffect
+    @Callback var onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
 
     public init() {}
 
@@ -30,6 +32,10 @@ public struct RootView: Component {
             }
         }
 
+        $onHoverRangeChange(deps: []) { (range) in
+            self.highlightedRange = range
+        }
+
         return div(
             style: .init()
                 .display("flex")
@@ -48,9 +54,21 @@ public struct RootView: Component {
                         .flexDirection("row")
                         .height("100%")
                 ) {
-                    SwiftCodeEditorPane(text: text, onInput: onTextChange)
-                    SwiftLexicalLookupPane(syntax: parsed.syntax)
-                    SwiftSyntaxScopePane(syntax: parsed.syntax)
+                    SwiftCodeEditorPane(
+                        text: text,
+                        highlightRange: highlightedRange.map {
+                            $0.lowerBound.utf8Offset..<$0.upperBound.utf8Offset
+                        },
+                        onInput: onTextChange
+                    )
+                    SwiftLexicalLookupPane(
+                        syntax: parsed.syntax,
+                        onHoverRangeChange: onHoverRangeChange
+                    )
+                    SwiftSyntaxScopePane(
+                        syntax: parsed.syntax,
+                        onHoverRangeChange: onHoverRangeChange
+                    )
                 }
             }
         }

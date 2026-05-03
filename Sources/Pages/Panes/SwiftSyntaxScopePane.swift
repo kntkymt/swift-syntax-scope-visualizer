@@ -4,9 +4,10 @@ import SwiftSyntaxScope
 
 internal struct SwiftSyntaxScopePane: Component {
     let syntax: SourceFileSyntax
+    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
 
     var deps: Deps? {
-        [syntax.id]
+        [syntax.id, onHoverRangeChange]
     }
 
     func render() -> Node {
@@ -18,7 +19,10 @@ internal struct SwiftSyntaxScopePane: Component {
             border: [],
         ) {
             div(style: .init().whiteSpace("nowrap")) {
-                ScopeTreeNodeView(scope: scope)
+                ScopeTreeNodeView(
+                    scope: scope,
+                    onHoverRangeChange: onHoverRangeChange
+                )
             }
         }
     }
@@ -28,11 +32,18 @@ private struct ScopeTreeNodeView: Component {
     var key: AnyHashable? { ObjectIdentifier(scope) }
 
     let scope: any SyntaxScopeProtocol
+    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+
+    @Callback var onHoverChange: Function<Void, Bool>
 
     func render() -> Node {
         let names = scope.introducedLookupNames
 
-        return HoverHighlight {
+        $onHoverChange(deps: [ObjectIdentifier(scope), onHoverRangeChange]) { (isHovered) in
+            onHoverRangeChange(isHovered ? scope.range : nil)
+        }
+
+        return HoverHighlight(onHoverChange: onHoverChange) {
             Accordion {
                 span(style: .init().color(Color.red)) {
                     scope.scopeTypeDescription
@@ -67,7 +78,10 @@ private struct ScopeTreeNodeView: Component {
                 }
             } body: {
                 scope.children.map { (child) in
-                    ScopeTreeNodeView(scope: child)
+                    ScopeTreeNodeView(
+                        scope: child,
+                        onHoverRangeChange: onHoverRangeChange
+                    )
                 }
             }
         }
