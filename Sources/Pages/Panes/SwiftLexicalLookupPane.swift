@@ -28,13 +28,13 @@ internal struct SwiftLexicalLookupPane: Component {
         let onTogglePopover = EventListener { _ in
             isPopoverOpen.toggle()
         }
-        let onToggleEmptyCollections = EventListener { _ in
+        let onToggleEmptyCollections = Function {
             config.hideEmptyCollections.toggle()
         }
-        let onToggleTokens = EventListener { _ in
+        let onToggleTokens = Function {
             config.hideTokens.toggle()
         }
-        let onToggleNonScope = EventListener { _ in
+        let onToggleNonScope = Function {
             config.hideNonScope.toggle()
         }
 
@@ -178,9 +178,9 @@ private struct SettingsPopover: Component {
     }
 
     let config: LexicalLookupConfig
-    let onToggleEmptyCollections: EventListener
-    let onToggleTokens: EventListener
-    let onToggleNonScope: EventListener
+    let onToggleEmptyCollections: Function<Void>
+    let onToggleTokens: Function<Void>
+    let onToggleNonScope: Function<Void>
 
     func render() -> Node {
         div(
@@ -199,56 +199,21 @@ private struct SettingsPopover: Component {
                 .whiteSpace("nowrap")
                 .zIndex("1")
         ) {
-            SettingsCheckbox(
+            CheckBoxRow(
                 text: "Hide Empty Collections",
                 checked: config.hideEmptyCollections,
                 onToggle: onToggleEmptyCollections
             )
-            SettingsCheckbox(
+            CheckBoxRow(
                 text: "Hide Tokens",
                 checked: config.hideTokens,
                 onToggle: onToggleTokens
             )
-            SettingsCheckbox(
+            CheckBoxRow(
                 text: "Hide Non-Scope",
                 checked: config.hideNonScope,
                 onToggle: onToggleNonScope
             )
-        }
-    }
-}
-
-private struct SettingsCheckbox: Component {
-    var key: AnyHashable? { text }
-
-    var deps: Deps? {
-        [text, checked, onToggle]
-    }
-
-    let text: String
-    let checked: Bool
-    let onToggle: EventListener
-
-    func render() -> Node {
-        let attributes: Attributes =
-            checked
-            ? Attributes(["type": "checkbox", "checked": ""])
-            : Attributes(["type": "checkbox"])
-
-        return label(
-            style: .init()
-                .display("flex")
-                .flexDirection("row")
-                .alignItems("center")
-                .gap("6px")
-                .cursor("pointer")
-                .userSelect("none")
-        ) {
-            input(
-                attributes: attributes,
-                listeners: .init().change(onToggle)
-            )
-            text
         }
     }
 }
