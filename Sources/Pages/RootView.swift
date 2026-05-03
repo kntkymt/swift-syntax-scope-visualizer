@@ -1,15 +1,21 @@
 import React
 import SRTJavaScriptKitEx
+import SwiftCodeEditor
+@_spi(Experimental) import SwiftLexicalLookup
 import SwiftParser
 import SwiftSyntax
+import SwiftSyntaxScope
 
 public struct RootView: Component {
 
     @State var text: String = ""
     @State var parsed: ParsedSource = .init(text: "", syntax: Parser.parse(source: ""))
     @State var highlightedRange: Range<AbsolutePosition>? = nil
+    @State var lookupResult: LookupResultData? = nil
     @Effect var parseEffect
     @Callback var onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+    @Callback var onLookup: Function<Void, ClickPointInfo>
+    @Callback var onLookupClose: Function<Void>
 
     public init() {}
 
@@ -36,6 +42,14 @@ public struct RootView: Component {
             self.highlightedRange = range
         }
 
+        $onLookup(deps: [parsed.syntax.id]) { (info) in
+            self.lookupResult = parsed.syntax.makeLookupResult(info: info)
+        }
+
+        $onLookupClose(deps: []) {
+            self.lookupResult = nil
+        }
+
         return div(
             style: .init()
                 .display("flex")
@@ -59,7 +73,8 @@ public struct RootView: Component {
                         highlightRange: highlightedRange.map {
                             $0.lowerBound.utf8Offset..<$0.upperBound.utf8Offset
                         },
-                        onInput: onTextChange
+                        onInput: onTextChange,
+                        onLookup: onLookup
                     )
                     SwiftLexicalLookupPane(
                         syntax: parsed.syntax,
@@ -71,6 +86,16 @@ public struct RootView: Component {
                     )
                 }
             }
+
+            if let lookupResult {
+                LookupResultPopover(
+                    clientX: lookupResult.clientX,
+                    clientY: lookupResult.clientY,
+                    lexicalLookupNames: lookupResult.lexicalLookupNames,
+                    syntaxScopeNames: lookupResult.syntaxScopeNames,
+                    onClose: onLookupClose
+                )
+            }
         }
     }
 }
@@ -81,5 +106,37 @@ struct ParsedSource: Equatable {
 
     static func == (lhs: ParsedSource, rhs: ParsedSource) -> Bool {
         lhs.text == rhs.text
+    }
+}
+
+internal struct LookupResultData: Equatable {
+    var clientX: Double
+    var clientY: Double
+    var lexicalLookupNames: [String]
+    var syntaxScopeNames: [String]
+}
+
+private extension SourceFileSyntax {
+    func makeLookupResult(info: ClickPointInfo) -> LookupResultData {
+        let position = AbsolutePosition(utf8Offset: info.utf8Offset)
+
+        let lexicalLookupNames = (token(at: position)?.lookup(nil) ?? [])
+            .flatMap(\.names)
+            .flatMap(\.flattened)
+            .map(\.displayDescription)
+
+        let syntaxScopeNames = lexicalLookup(
+            position: position,
+            name: nil,
+            options: .includeOuterResults
+        )
+        .map { "\($0.kind):\($0.text)" }
+
+        return LookupResultData(
+            clientX: info.clientX,
+            clientY: info.clientY,
+            lexicalLookupNames: lexicalLookupNames,
+            syntaxScopeNames: syntaxScopeNames
+        )
     }
 }

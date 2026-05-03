@@ -2,20 +2,38 @@ import JavaScriptKit
 import React
 import SRTDOM
 
+public struct ClickPointInfo: Hashable, Sendable {
+    public var utf8Offset: Int
+    public var clientX: Double
+    public var clientY: Double
+
+    public init(utf8Offset: Int, clientX: Double, clientY: Double) {
+        self.utf8Offset = utf8Offset
+        self.clientX = clientX
+        self.clientY = clientY
+    }
+}
+
 public struct SwiftCodeEditor: Component {
     public init(
         text: String,
         highlightRange: Range<Int>? = nil,
-        onInput: Function<Void, String>
+        isClickPointMode: Bool = false,
+        onInput: Function<Void, String>,
+        onClickPoint: Function<Void, ClickPointInfo>? = nil
     ) {
         self.text = text
         self.highlightRange = highlightRange
+        self.isClickPointMode = isClickPointMode
         self.onInput = onInput
+        self.onClickPoint = onClickPoint
     }
 
     public var text: String
     public var highlightRange: Range<Int>?
+    public var isClickPointMode: Bool
     public var onInput: Function<Void, String>
+    public var onClickPoint: Function<Void, ClickPointInfo>?
 
     @Ref var gutterRef: JSHTMLElement?
     @Ref var overlayRef: JSHTMLElement?
@@ -23,7 +41,7 @@ public struct SwiftCodeEditor: Component {
     @Effect var highlightEffect
 
     public var deps: Deps? {
-        [text, highlightRange, onInput]
+        [text, highlightRange, isClickPointMode, onInput, onClickPoint]
     }
 
     public func render() -> Node {
@@ -60,6 +78,18 @@ public struct SwiftCodeEditor: Component {
             _ = JSWindow.global.document.jsValue.execCommand("insertText", false, "\t")
         }
 
+        // In click-point mode, intercept the click on the textarea, translate the caret
+        // position (UTF-16) to a UTF-8 byte offset, and forward it together with the pointer's
+        // viewport coordinates so callers can anchor UI at the click site.
+        let onClick = EventListener { (event) in
+            guard isClickPointMode, let onClickPoint else { return }
+            let utf16Offset = Int(event.jsValue.target.selectionStart.number ?? 0)
+            guard let utf8Offset = utf16OffsetToUtf8Offset(utf16Offset) else { return }
+            let clientX = event.jsValue.clientX.number ?? 0
+            let clientY = event.jsValue.clientY.number ?? 0
+            onClickPoint(ClickPointInfo(utf8Offset: utf8Offset, clientX: clientX, clientY: clientY))
+        }
+
         // Highlight rectangles are positioned via the DOM Range API so widths are pixel-accurate
         // for any character (CJK, emoji ZWJ sequences, etc.). React doesn't manage these nodes;
         // the cleanup closure removes them before the next setup runs.
@@ -73,6 +103,35 @@ public struct SwiftCodeEditor: Component {
                 }
             }
         }
+
+        let baseTextareaAttributes: Attributes = .init()
+            .placeholder("input your swift code here")
+            .spellcheck("false")
+            .autocomplete("off")
+            .autocapitalize("off")
+            .wrap("off")
+        let textareaAttributes =
+            isClickPointMode ? baseTextareaAttributes.readonly("") : baseTextareaAttributes
+
+        let baseTextareaStyle: Style = .init()
+            .width("100%")
+            .height("100%")
+            .padding("8px")
+            .border("none")
+            .outline("none")
+            .resize("none")
+            .fontFamily("inherit")
+            .fontSize("inherit")
+            .lineHeight("inherit")
+            .whiteSpace("pre")
+            .tabSize("4")
+            .overflow("auto")
+            .backgroundColor("transparent")
+            .boxSizing("border-box")
+        let textareaStyle =
+            isClickPointMode
+            ? baseTextareaStyle.cursor("crosshair").caretColor("transparent")
+            : baseTextareaStyle
 
         return div(
             style: .init()
@@ -133,31 +192,13 @@ public struct SwiftCodeEditor: Component {
 
                 textarea(
                     ref: $textareaRef,
-                    attributes: .init()
-                        .placeholder("input your swift code here")
-                        .spellcheck("false")
-                        .autocomplete("off")
-                        .autocapitalize("off")
-                        .wrap("off"),
-                    style: .init()
-                        .width("100%")
-                        .height("100%")
-                        .padding("8px")
-                        .border("none")
-                        .outline("none")
-                        .resize("none")
-                        .fontFamily("inherit")
-                        .fontSize("inherit")
-                        .lineHeight("inherit")
-                        .whiteSpace("pre")
-                        .tabSize("4")
-                        .overflow("auto")
-                        .backgroundColor("transparent")
-                        .boxSizing("border-box"),
+                    attributes: textareaAttributes,
+                    style: textareaStyle,
                     listeners: .init()
                         .input(onInputEvent)
                         .scroll(onScroll)
                         .keydown(onKeyDown)
+                        .click(onClick)
                 )
             }
         }
@@ -184,6 +225,14 @@ private extension SwiftCodeEditor {
         guard let overlay = overlayRef, let textarea = textareaRef else { return }
         overlay.jsValue.scrollTop = textarea.jsValue.scrollTop
         overlay.jsValue.scrollLeft = textarea.jsValue.scrollLeft
+    }
+
+    func utf16OffsetToUtf8Offset(_ utf16Offset: Int) -> Int? {
+        let utf16 = text.utf16
+        guard utf16Offset >= 0, utf16Offset <= utf16.count else { return nil }
+        let utf16Index = utf16.index(utf16.startIndex, offsetBy: utf16Offset)
+        guard let stringIndex = String.Index(utf16Index, within: text) else { return nil }
+        return text.utf8.distance(from: text.utf8.startIndex, to: stringIndex)
     }
 
     func installHighlightRects() -> [JSValue] {
