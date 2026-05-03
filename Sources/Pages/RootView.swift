@@ -102,8 +102,10 @@ public struct RootView: Component {
                 LookupResultPopover(
                     clientX: lookupResult.clientX,
                     clientY: lookupResult.clientY,
+                    sourceLocationDescription: lookupResult.sourceLocationDescription,
                     lexicalLookupNames: lookupResult.lexicalLookupNames,
                     syntaxScopeNames: lookupResult.syntaxScopeNames,
+                    onHoverRangeChange: onHoverRangeChange,
                     onClose: onLookupClose
                 )
             }
@@ -122,12 +124,14 @@ struct ParsedSource: Equatable {
 
 internal struct LookupResultName: Hashable {
     var label: String
-    var range: String
+    var range: Range<AbsolutePosition>
+    var rangeDescription: String
 }
 
 internal struct LookupResultData: Equatable {
     var clientX: Double
     var clientY: Double
+    var sourceLocationDescription: String
     var lexicalLookupNames: [LookupResultName]
     var syntaxScopeNames: [LookupResultName]
 }
@@ -140,6 +144,8 @@ private extension SourceFileSyntax {
         let position = AbsolutePosition(utf8Offset: info.utf8Offset)
         let identifier = config.name.asLookupIdentifier
         let converter = SourceLocationConverter(fileName: "", tree: root)
+        let location = converter.location(for: position)
+        let sourceLocationDescription = "\(location.line):\(location.column)"
         let lexicalConfig = SwiftLexicalLookup.LookupConfig(
             finishInSequentialScope: config.swiftLexicalLookup.finishInSequentialScope
         )
@@ -148,13 +154,44 @@ private extension SourceFileSyntax {
 
         let lexicalLookupNames =
             (token(at: position)?.lookup(identifier, with: lexicalConfig) ?? [])
-            .flatMap(\.names)
-            .flatMap(\.flattened)
-            .map { name in
-                LookupResultName(
-                    label: name.displayDescription,
-                    range: name.syntax.sourceRange(converter: converter).description
-                )
+            .flatMap { (result: LookupResult) -> [LookupResultName] in
+                switch result {
+                case .fromScope(_, let names):
+                    return names.flatMap(\.flattened).map { name in
+                        LookupResultName(
+                            label: name.displayDescription,
+                            range: name.syntax.trimmedRange,
+                            rangeDescription: name.syntax.sourceRange(converter: converter)
+                                .description
+                        )
+                    }
+                case .lookForMembers(let syntax):
+                    return [
+                        LookupResultName(
+                            label: "lookForMembers:\(syntax.syntaxNodeType)",
+                            range: syntax.trimmedRange,
+                            rangeDescription: syntax.sourceRange(converter: converter).description
+                        )
+                    ]
+                case .lookForGenericParameters(let extensionDecl):
+                    return [
+                        LookupResultName(
+                            label: "lookForGenericParameters:\(extensionDecl.syntaxNodeType)",
+                            range: extensionDecl.trimmedRange,
+                            rangeDescription: extensionDecl.sourceRange(converter: converter)
+                                .description
+                        )
+                    ]
+                case .lookForImplicitClosureParameters(let closureExpr):
+                    return [
+                        LookupResultName(
+                            label: "lookForImplicitClosureParameters:\(closureExpr.syntaxNodeType)",
+                            range: closureExpr.trimmedRange,
+                            rangeDescription: closureExpr.sourceRange(converter: converter)
+                                .description
+                        )
+                    ]
+                }
             }
 
         let syntaxScopeNames = lexicalLookup(
@@ -165,13 +202,15 @@ private extension SourceFileSyntax {
         .map { name in
             LookupResultName(
                 label: "\(name.kind):\(name.text)",
-                range: name.syntax.sourceRange(converter: converter).description
+                range: name.syntax.trimmedRange,
+                rangeDescription: name.syntax.sourceRange(converter: converter).description
             )
         }
 
         return LookupResultData(
             clientX: info.clientX,
             clientY: info.clientY,
+            sourceLocationDescription: sourceLocationDescription,
             lexicalLookupNames: lexicalLookupNames,
             syntaxScopeNames: syntaxScopeNames
         )

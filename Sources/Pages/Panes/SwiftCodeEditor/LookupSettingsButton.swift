@@ -13,7 +13,7 @@ struct LookupSettingsButton: Component {
     func render() -> Node {
         div(style: .init().position("relative")) {
             Button(onClick: Function { isPopoverOpen.toggle() }) {
-                "Lookup Settings"
+                "Lookup Configs"
             }
 
             if isPopoverOpen {

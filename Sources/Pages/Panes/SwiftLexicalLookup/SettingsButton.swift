@@ -13,7 +13,7 @@ struct SettingsButton: Component {
     func render() -> Node {
         div(style: .init().position("relative")) {
             Button(onClick: Function { isPopoverOpen.toggle() }) {
-                "Settings"
+                "Visible Settings"
             }
 
             if isPopoverOpen {
