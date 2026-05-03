@@ -38,6 +38,16 @@ private struct ScopeTreeNodeView: Component {
                     scope.scopeTypeDescription
                 }
 
+                if !scope.syntax.declNames.isEmpty {
+                    span(
+                        style: .init()
+                            .marginLeft("8px")
+                            .color("#666")
+                    ) {
+                        scope.syntax.declNames.lazy.map { "\"\($0)\"" }.joined(separator: ", ")
+                    }
+                }
+
                 span(
                     style: .init()
                         .marginLeft("8px")
