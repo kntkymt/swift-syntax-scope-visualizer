@@ -2,20 +2,6 @@
 @_spi(Experimental) import SwiftLexicalLookup
 import React
 
-internal struct LexicalLookupConfig: Hashable {
-    static var `default`: LexicalLookupConfig {
-        LexicalLookupConfig(
-            hideEmptyCollections: true,
-            hideTokens: true,
-            hideNonScope: false
-        )
-    }
-
-    var hideEmptyCollections: Bool
-    var hideTokens: Bool
-    var hideNonScope: Bool
-}
-
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
     let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
@@ -54,67 +40,6 @@ internal struct SwiftLexicalLookupPane: Component {
                 )
             }
         }
-    }
-}
-
-private struct SettingsButton: Component {
-    var deps: Deps? {
-        [config, onConfigChange]
-    }
-
-    let config: LexicalLookupConfig
-    let onConfigChange: Function<Void, LexicalLookupConfig>
-
-    @State private var isPopoverOpen: Bool = false
-
-    func render() -> Node {
-        div(style: .init().position("relative")) {
-            button(
-                style: .init()
-                    .padding("4px 10px")
-                    .border("1px solid #ccc")
-                    .borderRadius("4px")
-                    .backgroundColor("#fff")
-                    .color("#000")
-                    .cursor("pointer")
-                    .font("inherit"),
-                listeners: .init().click(
-                    EventListener { _ in
-                        isPopoverOpen.toggle()
-                    }
-                )
-            ) {
-                "Settings"
-            }
-
-            if isPopoverOpen {
-                Popover {
-                    CheckBoxRow(
-                        text: "Hide Empty Collections",
-                        checked: config.hideEmptyCollections,
-                        onToggle: Function { toggle(\.hideEmptyCollections) }
-                    )
-                    CheckBoxRow(
-                        text: "Hide Tokens",
-                        checked: config.hideTokens,
-                        onToggle: Function { toggle(\.hideTokens) }
-                    )
-                    CheckBoxRow(
-                        text: "Hide Non-Scope",
-                        checked: config.hideNonScope,
-                        onToggle: Function { toggle(\.hideNonScope) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-private extension SettingsButton {
-    func toggle(_ keyPath: WritableKeyPath<LexicalLookupConfig, Bool>) {
-        var newConfig = config
-        newConfig[keyPath: keyPath].toggle()
-        onConfigChange(newConfig)
     }
 }
 
