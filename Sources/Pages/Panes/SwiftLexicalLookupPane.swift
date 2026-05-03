@@ -16,7 +16,7 @@ internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
 
     @State var config: LexicalLookupConfig = .init()
-    @State var isPopoverOpen: Bool = false
+    @Callback var onConfigChange: Function<Void, LexicalLookupConfig>
 
     var deps: Deps? {
         [syntax.id]
@@ -25,47 +25,18 @@ internal struct SwiftLexicalLookupPane: Component {
     func render() -> Node {
         let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
 
-        let onTogglePopover = EventListener { _ in
-            isPopoverOpen.toggle()
-        }
-        let onToggleEmptyCollections = Function {
-            config.hideEmptyCollections.toggle()
-        }
-        let onToggleTokens = Function {
-            config.hideTokens.toggle()
-        }
-        let onToggleNonScope = Function {
-            config.hideNonScope.toggle()
+        $onConfigChange(deps: []) { (newConfig) in
+            config = newConfig
         }
 
         return Pane(
             header: {
                 h4(style: .init().margin("0")) { "Swift Lexical Lookup" }
 
-                div(style: .init().position("relative")) {
-                    button(
-                        style: .init()
-                            .padding("4px 10px")
-                            .border("1px solid #ccc")
-                            .borderRadius("4px")
-                            .backgroundColor(config.isFiltered ? "#495057" : "#fff")
-                            .color(config.isFiltered ? "#fff" : "#000")
-                            .cursor("pointer")
-                            .font("inherit"),
-                        listeners: .init().click(onTogglePopover)
-                    ) {
-                        "Settings"
-                    }
-
-                    if isPopoverOpen {
-                        SettingsPopover(
-                            config: config,
-                            onToggleEmptyCollections: onToggleEmptyCollections,
-                            onToggleTokens: onToggleTokens,
-                            onToggleNonScope: onToggleNonScope
-                        )
-                    }
-                }
+                SettingsButton(
+                    config: config,
+                    onConfigChange: onConfigChange
+                )
             }
         ) {
             div(style: .init().whiteSpace("nowrap")) {
@@ -76,6 +47,67 @@ internal struct SwiftLexicalLookupPane: Component {
                 )
             }
         }
+    }
+}
+
+private struct SettingsButton: Component {
+    var deps: Deps? {
+        [config, onConfigChange]
+    }
+
+    let config: LexicalLookupConfig
+    let onConfigChange: Function<Void, LexicalLookupConfig>
+
+    @State private var isPopoverOpen: Bool = false
+
+    func render() -> Node {
+        div(style: .init().position("relative")) {
+            button(
+                style: .init()
+                    .padding("4px 10px")
+                    .border("1px solid #ccc")
+                    .borderRadius("4px")
+                    .backgroundColor(config.isFiltered ? "#495057" : "#fff")
+                    .color(config.isFiltered ? "#fff" : "#000")
+                    .cursor("pointer")
+                    .font("inherit"),
+                listeners: .init().click(
+                    EventListener { _ in
+                        isPopoverOpen.toggle()
+                    }
+                )
+            ) {
+                "Settings"
+            }
+
+            if isPopoverOpen {
+                Popover {
+                    CheckBoxRow(
+                        text: "Hide Empty Collections",
+                        checked: config.hideEmptyCollections,
+                        onToggle: Function { toggle(\.hideEmptyCollections) }
+                    )
+                    CheckBoxRow(
+                        text: "Hide Tokens",
+                        checked: config.hideTokens,
+                        onToggle: Function { toggle(\.hideTokens) }
+                    )
+                    CheckBoxRow(
+                        text: "Hide Non-Scope",
+                        checked: config.hideNonScope,
+                        onToggle: Function { toggle(\.hideNonScope) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+private extension SettingsButton {
+    func toggle(_ keyPath: WritableKeyPath<LexicalLookupConfig, Bool>) {
+        var newConfig = config
+        newConfig[keyPath: keyPath].toggle()
+        onConfigChange(newConfig)
     }
 }
 
@@ -165,55 +197,6 @@ private struct SyntaxTreeNodeView: Component {
                     )
                 }
             }
-        }
-    }
-}
-
-private struct SettingsPopover: Component {
-    var deps: Deps? {
-        [
-            config,
-            onToggleEmptyCollections, onToggleTokens, onToggleNonScope,
-        ]
-    }
-
-    let config: LexicalLookupConfig
-    let onToggleEmptyCollections: Function<Void>
-    let onToggleTokens: Function<Void>
-    let onToggleNonScope: Function<Void>
-
-    func render() -> Node {
-        div(
-            style: .init()
-                .position("absolute")
-                .top("calc(100% + 4px)")
-                .right("0")
-                .padding("8px 10px")
-                .backgroundColor("#fff")
-                .border("1px solid #ccc")
-                .borderRadius("4px")
-                .boxShadow("0 4px 12px rgba(0, 0, 0, 0.1)")
-                .display("flex")
-                .flexDirection("column")
-                .gap("6px")
-                .whiteSpace("nowrap")
-                .zIndex("1")
-        ) {
-            CheckBoxRow(
-                text: "Hide Empty Collections",
-                checked: config.hideEmptyCollections,
-                onToggle: onToggleEmptyCollections
-            )
-            CheckBoxRow(
-                text: "Hide Tokens",
-                checked: config.hideTokens,
-                onToggle: onToggleTokens
-            )
-            CheckBoxRow(
-                text: "Hide Non-Scope",
-                checked: config.hideNonScope,
-                onToggle: onToggleNonScope
-            )
         }
     }
 }
