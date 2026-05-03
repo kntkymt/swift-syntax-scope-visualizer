@@ -39,7 +39,7 @@ public struct RootView: Component {
         ) {
             Pane(
                 title: "Swift Syntax Scope Visualizer",
-                showRightBorder: false,
+                border: [],
                 scrollable: false
             ) {
                 div(

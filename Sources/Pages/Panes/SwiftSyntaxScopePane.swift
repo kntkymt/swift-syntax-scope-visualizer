@@ -15,7 +15,7 @@ internal struct SwiftSyntaxScopePane: Component {
 
         return Pane(
             title: "Swift Syntax Scope (referencing swift compiler)",
-            showRightBorder: false
+            border: [],
         ) {
             div(style: .init().whiteSpace("nowrap")) {
                 ScopeTreeNodeView(scope: scope)

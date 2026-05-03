@@ -47,7 +47,8 @@ internal struct SwiftLexicalLookupPane: Component {
                     config: config,
                     onConfigChange: onConfigChange
                 )
-            }
+            },
+            border: .right
         ) {
             div(style: .init().whiteSpace("nowrap")) {
                 SyntaxTreeNodeView(

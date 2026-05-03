@@ -10,7 +10,7 @@ internal struct SwiftCodeEditorPane: Component {
     }
 
     func render() -> Node {
-        Pane(title: "Source Code", scrollable: false) {
+        Pane(title: "Source Code", border: .right, scrollable: false) {
             SwiftCodeEditor(text: text, onInput: onInput)
         }
     }

@@ -1,21 +1,28 @@
 import React
 
 internal struct Pane: Component {
+    struct BorderPosition: OptionSet, Hashable {
+        var rawValue: Int
+
+        static let left = BorderPosition(rawValue: 1 << 0)
+        static let right = BorderPosition(rawValue: 1 << 1)
+    }
+
     internal init(
         @ChildrenBuilder header: () -> [Node],
-        showRightBorder: Bool = true,
+        border: BorderPosition,
         scrollable: Bool = true,
         @ChildrenBuilder children: () -> [Node] = { [] }
     ) {
         self.header = header()
-        self.showRightBorder = showRightBorder
+        self.border = border
         self.scrollable = scrollable
         self.children = children()
     }
 
     internal init(
         title: String,
-        showRightBorder: Bool = true,
+        border: BorderPosition,
         scrollable: Bool = true,
         @ChildrenBuilder children: () -> [Node] = { [] }
     ) {
@@ -23,19 +30,19 @@ internal struct Pane: Component {
             header: {
                 h4(style: .init().margin("0")) { title }
             },
-            showRightBorder: showRightBorder,
+            border: border,
             scrollable: scrollable,
             children: children
         )
     }
 
     private var header: [Node]
-    private var showRightBorder: Bool
+    private var border: BorderPosition
     private var scrollable: Bool
     private var children: [Node]
 
     var deps: Deps? {
-        [header.deps, showRightBorder, scrollable, children.deps]
+        [header.deps, border, scrollable, children.deps]
     }
 
     func render() -> Node {
@@ -46,7 +53,8 @@ internal struct Pane: Component {
                 .height("100%")
                 .display("flex")
                 .flexDirection("column")
-                .borderRight(showRightBorder ? "1px solid #ddd" : "none")
+                .borderLeft(border.contains(.left) ? "1px solid #ddd" : "none")
+                .borderRight(border.contains(.right) ? "1px solid #ddd" : "none")
                 .boxSizing("border-box")
                 .fontFamily("ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
         ) {
