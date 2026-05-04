@@ -1,5 +1,4 @@
 import React
-import SRTJavaScriptKitEx
 import SwiftCodeEditor
 @_spi(Experimental) import SwiftLexicalLookup
 import SwiftParser
@@ -9,11 +8,12 @@ import SwiftSyntaxScope
 
 public struct RootView: Component {
     @State var text: String = ""
-    @State var parsed: ParsedSource = ParsedSource(from: "")
     @State var highlightedRange: Range<AbsolutePosition>? = nil
     @State var lookupConfig: LookupConfig = .default
     @State var lookupResult: LookupResultData? = nil
-    @Effect var parseEffect
+
+    @ParseSourceHook var parsed: ParsedSource
+
     @Callback var onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
     @Callback var onLookup: Function<Void, ClickPointInfo>
     @Callback var onLookupClose: Function<Void>
@@ -21,19 +21,7 @@ public struct RootView: Component {
     public init() {}
 
     public func render() -> Node {
-        // Debounce text -> SourceFileSyntax. Cleanup captures `timer` so that
-        // dropping the closure releases the JSTimer, triggering clearTimeout
-        // via its deinit.
-        $parseEffect(deps: [text]) {
-            let pendingText = text
-            let timer = JSTimer(millisecondsDelay: 500) {
-                parsed = ParsedSource(from: pendingText)
-            }
-
-            return {
-                _ = timer
-            }
-        }
+        $parsed(text: text)
 
         $onHoverRangeChange(deps: []) { (range) in
             self.highlightedRange = range
@@ -92,24 +80,5 @@ public struct RootView: Component {
                 }
             }
         }
-    }
-}
-
-struct ParsedSource: Equatable {
-    init(from text: String) {
-        self.text = text
-        let syntax = Parser.parse(source: text)
-        self.syntax = syntax
-        let scope = SourceFileScope(syntax: syntax)
-        scope.buildFullyExpandedTree()
-        self.scope = scope
-    }
-
-    let text: String
-    let syntax: SourceFileSyntax
-    let scope: SourceFileScope
-
-    static func == (lhs: ParsedSource, rhs: ParsedSource) -> Bool {
-        lhs.text == rhs.text
     }
 }
