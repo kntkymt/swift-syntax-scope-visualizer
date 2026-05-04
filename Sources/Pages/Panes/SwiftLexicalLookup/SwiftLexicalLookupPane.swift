@@ -1,6 +1,7 @@
 @_spi(RawSyntax) import SwiftSyntax
 @_spi(Experimental) import SwiftLexicalLookup
 import React
+import SwiftReactPlus
 
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
@@ -8,7 +9,6 @@ internal struct SwiftLexicalLookupPane: Component {
     let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
 
     @State var config: LexicalLookupConfig = .default
-    @Callback var onConfigChange: Function<Void, LexicalLookupConfig>
 
     var deps: Deps? {
         [syntax.id, highlightedSyntaxIds, onHoverRangeChange]
@@ -17,18 +17,11 @@ internal struct SwiftLexicalLookupPane: Component {
     func render() -> Node {
         let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
 
-        $onConfigChange(deps: []) { (newConfig) in
-            config = newConfig
-        }
-
         return Pane(
             header: {
                 h4(style: .init().margin("0")) { "Swift Lexical Lookup" }
 
-                SettingsButton(
-                    config: config,
-                    onConfigChange: onConfigChange
-                )
+                SettingsButton(config: _config.binding)
             },
             border: .right
         ) {

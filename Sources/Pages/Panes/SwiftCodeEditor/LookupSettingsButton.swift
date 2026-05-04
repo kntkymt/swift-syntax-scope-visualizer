@@ -23,7 +23,7 @@ struct LookupSettingsButton: Component {
                         value: config.name,
                         placeholder: "(any)",
                         onChange: Function { newName in
-                            update { $0.name = newName }
+                            config.name = newName
                         }
                     )
 
@@ -32,7 +32,7 @@ struct LookupSettingsButton: Component {
                         text: "Finish in sequential scope",
                         checked: config.swiftLexicalLookup.finishInSequentialScope,
                         onToggle: Function {
-                            update { $0.swiftLexicalLookup.finishInSequentialScope.toggle() }
+                            config.swiftLexicalLookup.finishInSequentialScope.toggle()
                         }
                     )
 
@@ -41,19 +41,11 @@ struct LookupSettingsButton: Component {
                         text: "Include outer results",
                         checked: config.swiftSyntaxScope.includeOuterResults,
                         onToggle: Function {
-                            update { $0.swiftSyntaxScope.includeOuterResults.toggle() }
+                            config.swiftSyntaxScope.includeOuterResults.toggle()
                         }
                     )
                 }
             }
         }
-    }
-}
-
-private extension LookupSettingsButton {
-    func update(_ mutate: (inout LookupConfig) -> Void) {
-        var newConfig = config
-        mutate(&newConfig)
-        config = newConfig
     }
 }

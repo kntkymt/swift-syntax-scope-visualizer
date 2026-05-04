@@ -1,12 +1,12 @@
 import React
+import SwiftReactPlus
 
 struct SettingsButton: Component {
     var deps: Deps? {
-        [config, onConfigChange]
+        [config]
     }
 
-    let config: LexicalLookupConfig
-    let onConfigChange: Function<Void, LexicalLookupConfig>
+    @Binding var config: LexicalLookupConfig
 
     @State private var isPopoverOpen: Bool = false
 
@@ -21,28 +21,20 @@ struct SettingsButton: Component {
                     CheckBoxRow(
                         text: "Hide Empty Collections",
                         checked: config.hideEmptyCollections,
-                        onToggle: Function { toggle(\.hideEmptyCollections) }
+                        onToggle: Function { config.hideEmptyCollections.toggle() }
                     )
                     CheckBoxRow(
                         text: "Hide Tokens",
                         checked: config.hideTokens,
-                        onToggle: Function { toggle(\.hideTokens) }
+                        onToggle: Function { config.hideTokens.toggle() }
                     )
                     CheckBoxRow(
                         text: "Hide Non-Scope",
                         checked: config.hideNonScope,
-                        onToggle: Function { toggle(\.hideNonScope) }
+                        onToggle: Function { config.hideNonScope.toggle() }
                     )
                 }
             }
         }
-    }
-}
-
-private extension SettingsButton {
-    func toggle(_ keyPath: WritableKeyPath<LexicalLookupConfig, Bool>) {
-        var newConfig = config
-        newConfig[keyPath: keyPath].toggle()
-        onConfigChange(newConfig)
     }
 }
