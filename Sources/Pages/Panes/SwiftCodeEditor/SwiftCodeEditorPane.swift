@@ -36,7 +36,7 @@ internal struct SwiftCodeEditorPane: Component {
                         isActive: isLookupMode,
                         onClick: Function { isLookupMode.toggle() }
                     ) {
-                        "Lookup"
+                        isLookupMode ? "Lookup Mode: ON" : "Lookup Mode: OFF"
                     }
                     LookupSettingsButton(
                         config: lookupConfig,
