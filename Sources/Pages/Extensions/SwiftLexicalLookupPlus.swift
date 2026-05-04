@@ -36,6 +36,19 @@ internal extension LookupName {
     }
 }
 
+internal extension SyntaxProtocol {
+    var nearestEnclosingScope: ScopeSyntax? {
+        var current: Syntax? = Syntax(self)
+        while let node = current {
+            if let scope = node.asProtocol(SyntaxProtocol.self) as? ScopeSyntax {
+                return scope
+            }
+            current = node.parent
+        }
+        return nil
+    }
+}
+
 internal extension ScopeSyntax {
     // Run lookup at the scope's end with `finishInSequentialScope: true` so a
     // SequentialScopeSyntax (CodeBlock / SourceFile / ...) folds in names from

@@ -89,10 +89,12 @@ public struct RootView: Component {
                     )
                     SwiftLexicalLookupPane(
                         syntax: parsed.syntax,
+                        highlightedSyntaxIds: lookupResult?.lexicalLookupOriginSyntaxIds ?? [],
                         onHoverRangeChange: onHoverRangeChange
                     )
                     SwiftSyntaxScopePane(
                         scope: parsed.scope,
+                        highlightedScopeIds: lookupResult?.syntaxScopeOriginScopeIds ?? [],
                         onHoverRangeChange: onHoverRangeChange
                     )
                 }
@@ -144,6 +146,8 @@ internal struct LookupResultData: Equatable {
     var sourceLocationDescription: String
     var lexicalLookupNames: [LookupResultName]
     var syntaxScopeNames: [LookupResultName]
+    var lexicalLookupOriginSyntaxIds: Set<SyntaxIdentifier>
+    var syntaxScopeOriginScopeIds: Set<ObjectIdentifier>
 }
 
 private extension SourceFileScope {
@@ -162,8 +166,10 @@ private extension SourceFileScope {
         let options: LookupOptions =
             config.swiftSyntaxScope.includeOuterResults ? .includeOuterResults : []
 
+        let originToken = syntax.token(at: position)
+
         let lexicalLookupNames =
-            (syntax.token(at: position)?.lookup(identifier, with: lexicalConfig) ?? [])
+            (originToken?.lookup(identifier, with: lexicalConfig) ?? [])
             .flatMap { (result: LookupResult) -> [LookupResultName] in
                 switch result {
                 case .fromScope(_, let names):
@@ -217,12 +223,36 @@ private extension SourceFileScope {
             )
         }
 
+        let lexicalLookupOriginSyntaxIds: Set<SyntaxIdentifier> = {
+            guard let token = originToken else { return [] }
+            var ids: Set<SyntaxIdentifier> = []
+            var current: ScopeSyntax? = token.nearestEnclosingScope
+            while let scope = current {
+                ids.insert(scope.id)
+                current = scope.parentScope
+            }
+            return ids
+        }()
+
+        let syntaxScopeOriginScopeIds: Set<ObjectIdentifier> = {
+            var ids: Set<ObjectIdentifier> = []
+            var current: (any SyntaxScopeProtocol)? =
+                self.findStartingScopeForLookup(position: position)
+            while let scope = current {
+                ids.insert(ObjectIdentifier(scope))
+                current = scope.lookupParent
+            }
+            return ids
+        }()
+
         return LookupResultData(
             clientX: info.clientX,
             clientY: info.clientY,
             sourceLocationDescription: sourceLocationDescription,
             lexicalLookupNames: lexicalLookupNames,
-            syntaxScopeNames: syntaxScopeNames
+            syntaxScopeNames: syntaxScopeNames,
+            lexicalLookupOriginSyntaxIds: lexicalLookupOriginSyntaxIds,
+            syntaxScopeOriginScopeIds: syntaxScopeOriginScopeIds
         )
     }
 }

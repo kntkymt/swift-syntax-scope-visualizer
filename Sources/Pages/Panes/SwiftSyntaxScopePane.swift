@@ -4,10 +4,11 @@ import SwiftSyntaxScope
 
 internal struct SwiftSyntaxScopePane: Component {
     let scope: SourceFileScope
+    let highlightedScopeIds: Set<ObjectIdentifier>
     let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
 
     var deps: Deps? {
-        [ObjectIdentifier(scope), onHoverRangeChange]
+        [ObjectIdentifier(scope), highlightedScopeIds, onHoverRangeChange]
     }
 
     func render() -> Node {
@@ -18,6 +19,7 @@ internal struct SwiftSyntaxScopePane: Component {
             div(style: .init().whiteSpace("nowrap")) {
                 ScopeTreeNodeView(
                     scope: scope,
+                    highlightedScopeIds: highlightedScopeIds,
                     onHoverRangeChange: onHoverRangeChange
                 )
             }
@@ -29,19 +31,24 @@ private struct ScopeTreeNodeView: Component {
     var key: AnyHashable? { ObjectIdentifier(scope) }
 
     let scope: any SyntaxScopeProtocol
+    let highlightedScopeIds: Set<ObjectIdentifier>
     let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
 
     @Callback var onHoverChange: Function<Void, Bool>
 
     func render() -> Node {
         let names = scope.introducedLookupNames
+        let isLookupOrigin = highlightedScopeIds.contains(ObjectIdentifier(scope))
 
         $onHoverChange(deps: [ObjectIdentifier(scope), onHoverRangeChange]) { (isHovered) in
             onHoverRangeChange(isHovered ? scope.range : nil)
         }
 
         return HoverHighlight(onHoverChange: onHoverChange) {
-            Accordion {
+            Accordion(
+                headerBackgroundColor:
+                    isLookupOrigin ? Color.lookupOriginHighlight : "transparent"
+            ) {
                 span(style: .init().color(Color.red)) {
                     scope.scopeTypeDescription
                 }
@@ -77,6 +84,7 @@ private struct ScopeTreeNodeView: Component {
                 scope.children.map { (child) in
                     ScopeTreeNodeView(
                         scope: child,
+                        highlightedScopeIds: highlightedScopeIds,
                         onHoverRangeChange: onHoverRangeChange
                     )
                 }

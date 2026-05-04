@@ -4,13 +4,14 @@ import React
 
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
+    let highlightedSyntaxIds: Set<SyntaxIdentifier>
     let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
 
     @State var config: LexicalLookupConfig = .default
     @Callback var onConfigChange: Function<Void, LexicalLookupConfig>
 
     var deps: Deps? {
-        [syntax.id, onHoverRangeChange]
+        [syntax.id, highlightedSyntaxIds, onHoverRangeChange]
     }
 
     func render() -> Node {
@@ -36,6 +37,7 @@ internal struct SwiftLexicalLookupPane: Component {
                     node: syntax,
                     converter: converter,
                     config: config,
+                    highlightedSyntaxIds: highlightedSyntaxIds,
                     onHoverRangeChange: onHoverRangeChange
                 )
             }
@@ -47,12 +49,13 @@ private struct SyntaxTreeNodeView: Component {
     var key: AnyHashable? { node.id }
 
     var deps: Deps? {
-        [node.id, ObjectIdentifier(converter), config, onHoverRangeChange]
+        [node.id, ObjectIdentifier(converter), config, highlightedSyntaxIds, onHoverRangeChange]
     }
 
     let node: any SyntaxProtocol
     let converter: SourceLocationConverter
     let config: LexicalLookupConfig
+    let highlightedSyntaxIds: Set<SyntaxIdentifier>
     let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
 
     @Callback var onHoverChange: Function<Void, Bool>
@@ -65,13 +68,17 @@ private struct SyntaxTreeNodeView: Component {
         let introducedNames = node.introducedNames
         let introducedNamesToParent = node.introducedNamesToParent
         let declNames = node.declNames
+        let isLookupOrigin = highlightedSyntaxIds.contains(node.id)
 
         $onHoverChange(deps: [node.id, onHoverRangeChange]) { (isHovered) in
             onHoverRangeChange(isHovered ? node.trimmedRange : nil)
         }
 
         return HoverHighlight(onHoverChange: onHoverChange) {
-            Accordion {
+            Accordion(
+                headerBackgroundColor:
+                    isLookupOrigin ? Color.lookupOriginHighlight : "transparent"
+            ) {
                 span(style: .init().color(typeColor)) {
                     if let scopeDebugName = scope?.scopeDebugName {
                         "\(node.typeName): \(scopeDebugName)"
@@ -133,6 +140,7 @@ private struct SyntaxTreeNodeView: Component {
                         node: child,
                         converter: converter,
                         config: config,
+                        highlightedSyntaxIds: highlightedSyntaxIds,
                         onHoverRangeChange: onHoverRangeChange
                     )
                 }

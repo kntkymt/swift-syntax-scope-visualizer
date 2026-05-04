@@ -3,19 +3,22 @@ import React
 internal struct Accordion: Component {
     internal init(
         initiallyExpanded: Bool = true,
+        headerBackgroundColor: String = "transparent",
         @ChildrenBuilder header: () -> [Node],
         @ChildrenBuilder body: () -> [Node] = { [] }
     ) {
+        self.headerBackgroundColor = headerBackgroundColor
         self.header = header()
         self.body = body()
         self._isExpanded = State(wrappedValue: initiallyExpanded)
     }
 
+    private var headerBackgroundColor: String
     private var header: [Node]
     private var body: [Node]
 
     var deps: Deps? {
-        [header.deps, body.deps]
+        [headerBackgroundColor, header.deps, body.deps]
     }
 
     @State private var isExpanded: Bool
@@ -35,7 +38,8 @@ internal struct Accordion: Component {
                     .flexDirection("row")
                     .alignItems("baseline")
                     .cursor(isExpandable ? "pointer" : "default")
-                    .userSelect("none"),
+                    .userSelect("none")
+                    .backgroundColor(headerBackgroundColor),
                 listeners: .init().click(onToggle)
             ) {
                 span(

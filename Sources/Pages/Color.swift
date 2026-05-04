@@ -3,4 +3,5 @@ internal enum Color {
     static let red = "#c92a2a"
     static let secondary = "#666"
     static let buttonActiveBackground = "#e0ebff"
+    static let lookupOriginHighlight = "rgba(255, 193, 7, 0.5)"
 }
