@@ -10,32 +10,20 @@ public struct RootView: Component {
     @State var text: String = ""
     @State var highlightedRange: Range<AbsolutePosition>? = nil
     @State var lookupConfig: LookupConfig = .default
-    @State var lookupResult: LookupResultData? = nil
 
     @ParseSourceHook var parsed: ParsedSource
+    @LookupHook var lookupResult: LookupResultData?
 
     @Callback var onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
-    @Callback var onLookup: Function<Void, ClickPointInfo>
-    @Callback var onLookupClose: Function<Void>
 
     public init() {}
 
     public func render() -> Node {
         $parsed(text: text)
+        $lookupResult(scope: parsed.scope, config: lookupConfig)
 
         $onHoverRangeChange(deps: []) { (range) in
             self.highlightedRange = range
-        }
-
-        $onLookup(deps: [parsed.syntax.id, lookupConfig]) { (info) in
-            self.lookupResult = parsed.scope.makeLookupResult(
-                info: info,
-                config: lookupConfig
-            )
-        }
-
-        $onLookupClose(deps: []) {
-            self.lookupResult = nil
         }
 
         return div(
@@ -63,9 +51,9 @@ public struct RootView: Component {
                         },
                         lookupConfig: _lookupConfig.binding,
                         lookupResult: lookupResult,
-                        onLookup: onLookup,
+                        onLookup: $lookupResult.onLookup,
                         onHoverRangeChange: onHoverRangeChange,
-                        onLookupClose: onLookupClose
+                        onLookupClose: $lookupResult.onLookupClose
                     )
                     SwiftLexicalLookupPane(
                         syntax: parsed.syntax,
