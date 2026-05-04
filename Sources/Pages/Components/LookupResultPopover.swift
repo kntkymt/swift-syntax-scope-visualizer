@@ -3,16 +3,14 @@ import SwiftSyntax
 
 internal struct LookupResultPopover: Component {
     internal init(
-        clientX: Double,
-        clientY: Double,
+        anchorPoint: SIMD2<Double>,
         sourceLocationDescription: String,
         lexicalLookupNames: [LookupResultName],
         syntaxScopeNames: [LookupResultName],
         onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>,
         onClose: Function<Void>
     ) {
-        self.clientX = clientX
-        self.clientY = clientY
+        self.anchorPoint = anchorPoint
         self.sourceLocationDescription = sourceLocationDescription
         self.lexicalLookupNames = lexicalLookupNames
         self.syntaxScopeNames = syntaxScopeNames
@@ -20,8 +18,7 @@ internal struct LookupResultPopover: Component {
         self.onClose = onClose
     }
 
-    private var clientX: Double
-    private var clientY: Double
+    private var anchorPoint: SIMD2<Double>
     private var sourceLocationDescription: String
     private var lexicalLookupNames: [LookupResultName]
     private var syntaxScopeNames: [LookupResultName]
@@ -30,7 +27,7 @@ internal struct LookupResultPopover: Component {
 
     var deps: Deps? {
         [
-            clientX, clientY, sourceLocationDescription,
+            anchorPoint, sourceLocationDescription,
             lexicalLookupNames, syntaxScopeNames,
             onHoverRangeChange, onClose,
         ]
@@ -38,7 +35,7 @@ internal struct LookupResultPopover: Component {
 
     func render() -> Node {
         Popover(
-            anchor: .viewport(x: clientX, y: clientY),
+            anchor: .viewport(x: anchorPoint.x, y: anchorPoint.y),
             scrollable: true,
             onDismiss: onClose
         ) {

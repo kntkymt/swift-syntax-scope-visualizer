@@ -102,8 +102,7 @@ public struct RootView: Component {
 
             if let lookupResult {
                 LookupResultPopover(
-                    clientX: lookupResult.clientX,
-                    clientY: lookupResult.clientY,
+                    anchorPoint: SIMD2(lookupResult.clientX, lookupResult.clientY),
                     sourceLocationDescription: lookupResult.sourceLocationDescription,
                     lexicalLookupNames: lookupResult.lexicalLookupNames,
                     syntaxScopeNames: lookupResult.syntaxScopeNames,
