@@ -102,7 +102,7 @@ public struct RootView: Component {
 
             if let lookupResult {
                 LookupResultPopover(
-                    anchorPoint: SIMD2(lookupResult.clientX, lookupResult.clientY),
+                    anchorPoint: lookupResult.anchorPoint,
                     sourceLocationDescription: lookupResult.sourceLocationDescription,
                     lexicalLookupNames: lookupResult.lexicalLookupNames,
                     syntaxScopeNames: lookupResult.syntaxScopeNames,
@@ -140,8 +140,7 @@ internal struct LookupResultName: Hashable {
 }
 
 internal struct LookupResultData: Equatable {
-    var clientX: Double
-    var clientY: Double
+    var anchorPoint: SIMD2<Double>
     var sourceLocationDescription: String
     var lexicalLookupNames: [LookupResultName]
     var syntaxScopeNames: [LookupResultName]
@@ -245,8 +244,7 @@ private extension SourceFileScope {
         }()
 
         return LookupResultData(
-            clientX: info.clientX,
-            clientY: info.clientY,
+            anchorPoint: info.clientPoint,
             sourceLocationDescription: sourceLocationDescription,
             lexicalLookupNames: lexicalLookupNames,
             syntaxScopeNames: syntaxScopeNames,

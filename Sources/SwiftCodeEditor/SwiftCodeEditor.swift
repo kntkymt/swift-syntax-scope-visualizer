@@ -4,13 +4,11 @@ import SRTDOM
 
 public struct ClickPointInfo: Hashable, Sendable {
     public var utf8Offset: Int
-    public var clientX: Double
-    public var clientY: Double
+    public var clientPoint: SIMD2<Double>
 
-    public init(utf8Offset: Int, clientX: Double, clientY: Double) {
+    public init(utf8Offset: Int, clientPoint: SIMD2<Double>) {
         self.utf8Offset = utf8Offset
-        self.clientX = clientX
-        self.clientY = clientY
+        self.clientPoint = clientPoint
     }
 }
 
@@ -86,8 +84,8 @@ public struct SwiftCodeEditor: Component {
             guard isClickPointMode, let onClickPoint else { return }
             let utf16Offset = Int(event.jsValue.target.selectionStart.number ?? 0)
             guard let utf8Offset = utf16OffsetToUtf8Offset(utf16Offset) else { return }
-            let (clientX, clientY) = caretAnchorPoint(atUtf16Offset: utf16Offset)
-            onClickPoint(ClickPointInfo(utf8Offset: utf8Offset, clientX: clientX, clientY: clientY))
+            let clientPoint = caretAnchorPoint(atUtf16Offset: utf16Offset)
+            onClickPoint(ClickPointInfo(utf8Offset: utf8Offset, clientPoint: clientPoint))
         }
 
         // Highlight rectangles are positioned via the DOM Range API so widths are pixel-accurate
@@ -238,10 +236,10 @@ private extension SwiftCodeEditor {
     // Resolve the viewport coordinates of the caret at `utf16Offset` by collapsing a DOM Range
     // on the overlay's transparent text node. Returns the bottom-left corner so anchored UI
     // sits just below the caret line.
-    func caretAnchorPoint(atUtf16Offset utf16Offset: Int) -> (Double, Double) {
-        guard let overlay = overlayRef else { return (0, 0) }
+    func caretAnchorPoint(atUtf16Offset utf16Offset: Int) -> SIMD2<Double> {
+        guard let overlay = overlayRef else { return .zero }
         let textNode: JSValue = overlay.jsValue.firstChild
-        guard Int(textNode.nodeType.number ?? 0) == 3 else { return (0, 0) }
+        guard Int(textNode.nodeType.number ?? 0) == 3 else { return .zero }
 
         let range = JSWindow.global.document.jsValue.createRange()
         _ = range.setStart(textNode, JSValue.number(Double(utf16Offset)))
@@ -250,7 +248,7 @@ private extension SwiftCodeEditor {
         let bounds = range.getBoundingClientRect()
         let left = bounds.left.number ?? 0
         let bottom = bounds.bottom.number ?? 0
-        return (left, bottom)
+        return SIMD2(left, bottom)
     }
 
     func installHighlightRects() -> [JSValue] {
