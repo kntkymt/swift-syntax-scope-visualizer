@@ -18,7 +18,7 @@ internal struct SwiftCodeEditorPane: Component {
 
     var deps: Deps? {
         [
-            text, highlightRange, _lookupConfig, lookupResult,
+            text, highlightRange, lookupConfig, lookupResult,
             onInput, onLookup,
             onHoverRangeChange, onLookupClose,
         ]

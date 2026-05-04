@@ -11,7 +11,7 @@ public struct RootView: Component {
     @State var text: String = ""
     @State var parsed: ParsedSource = ParsedSource(from: "")
     @State var highlightedRange: Range<AbsolutePosition>? = nil
-    @BindableState var lookupConfig: LookupConfig = .default
+    @State var lookupConfig: LookupConfig = .default
     @State var lookupResult: LookupResultData? = nil
     @Effect var parseEffect
     @Callback var onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
@@ -77,7 +77,7 @@ public struct RootView: Component {
                         highlightRange: highlightedRange.map {
                             $0.lowerBound.utf8Offset..<$0.upperBound.utf8Offset
                         },
-                        lookupConfig: $lookupConfig,
+                        lookupConfig: _lookupConfig.binding,
                         lookupResult: lookupResult,
                         onInput: onTextChange,
                         onLookup: onLookup,

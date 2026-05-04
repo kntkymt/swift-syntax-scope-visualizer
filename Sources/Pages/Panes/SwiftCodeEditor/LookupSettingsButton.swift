@@ -3,7 +3,7 @@ import SwiftReactPlus
 
 struct LookupSettingsButton: Component {
     var deps: Deps? {
-        [_config]
+        [config]
     }
 
     @Binding var config: LookupConfig
