@@ -10,7 +10,7 @@ internal struct LookupResultName: Hashable {
     var rangeDescription: String
 }
 
-internal struct LookupResultData: Equatable {
+internal struct LookupResultData: Hashable {
     var anchorPoint: SIMD2<Double>
     var sourceLocationDescription: String
     var lexicalLookupNames: [LookupResultName]

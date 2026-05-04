@@ -3,53 +3,40 @@ import SwiftSyntax
 
 internal struct LookupResultPopover: Component {
     internal init(
-        anchorPoint: SIMD2<Double>,
-        sourceLocationDescription: String,
-        lexicalLookupNames: [LookupResultName],
-        syntaxScopeNames: [LookupResultName],
+        result: LookupResultData,
         onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>,
         onClose: Function<Void>
     ) {
-        self.anchorPoint = anchorPoint
-        self.sourceLocationDescription = sourceLocationDescription
-        self.lexicalLookupNames = lexicalLookupNames
-        self.syntaxScopeNames = syntaxScopeNames
+        self.result = result
         self.onHoverRangeChange = onHoverRangeChange
         self.onClose = onClose
     }
 
-    private var anchorPoint: SIMD2<Double>
-    private var sourceLocationDescription: String
-    private var lexicalLookupNames: [LookupResultName]
-    private var syntaxScopeNames: [LookupResultName]
+    private var result: LookupResultData
     private var onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
     private var onClose: Function<Void>
 
     var deps: Deps? {
-        [
-            anchorPoint, sourceLocationDescription,
-            lexicalLookupNames, syntaxScopeNames,
-            onHoverRangeChange, onClose,
-        ]
+        [result, onHoverRangeChange, onClose]
     }
 
     func render() -> Node {
         Popover(
-            anchor: .viewport(x: anchorPoint.x, y: anchorPoint.y),
+            anchor: .viewport(x: result.anchorPoint.x, y: result.anchorPoint.y),
             scrollable: true,
             onDismiss: onClose
         ) {
             div(style: .init().fontWeight("bold")) {
-                "Lookup Result from \(sourceLocationDescription)"
+                "Lookup Result from \(result.sourceLocationDescription)"
             }
             LookupResultSection(
                 title: "Swift Lexical Lookup",
-                names: lexicalLookupNames,
+                names: result.lexicalLookupNames,
                 onHoverRangeChange: onHoverRangeChange
             )
             LookupResultSection(
                 title: "Swift Syntax Scope",
-                names: syntaxScopeNames,
+                names: result.syntaxScopeNames,
                 onHoverRangeChange: onHoverRangeChange
             )
         }

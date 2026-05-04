@@ -101,10 +101,7 @@ public struct RootView: Component {
 
             if let lookupResult {
                 LookupResultPopover(
-                    anchorPoint: lookupResult.anchorPoint,
-                    sourceLocationDescription: lookupResult.sourceLocationDescription,
-                    lexicalLookupNames: lookupResult.lexicalLookupNames,
-                    syntaxScopeNames: lookupResult.syntaxScopeNames,
+                    result: lookupResult,
                     onHoverRangeChange: onHoverRangeChange,
                     onClose: onLookupClose
                 )
