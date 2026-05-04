@@ -36,7 +36,8 @@ let package = Package(
         .target(
             name: "SwiftCodeEditor",
             dependencies: [
-                .product(name: "React", package: "swift-react")
+                "SwiftReactPlus",
+                .product(name: "React", package: "swift-react"),
             ]
         ),
         .target(

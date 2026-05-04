@@ -21,10 +21,6 @@ public struct RootView: Component {
     public init() {}
 
     public func render() -> Node {
-        let onTextChange = Function<Void, String> { (text) in
-            self.text = text
-        }
-
         // Debounce text -> SourceFileSyntax. Cleanup captures `timer` so that
         // dropping the closure releases the JSTimer, triggering clearTimeout
         // via its deinit.
@@ -73,13 +69,12 @@ public struct RootView: Component {
                         .height("100%")
                 ) {
                     SwiftCodeEditorPane(
-                        text: text,
+                        text: _text.binding,
                         highlightRange: highlightedRange.map {
                             $0.lowerBound.utf8Offset..<$0.upperBound.utf8Offset
                         },
                         lookupConfig: _lookupConfig.binding,
                         lookupResult: lookupResult,
-                        onInput: onTextChange,
                         onLookup: onLookup,
                         onHoverRangeChange: onHoverRangeChange,
                         onLookupClose: onLookupClose

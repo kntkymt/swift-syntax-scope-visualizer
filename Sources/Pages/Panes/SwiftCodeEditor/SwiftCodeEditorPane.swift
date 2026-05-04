@@ -4,11 +4,10 @@ import SwiftReactPlus
 import SwiftSyntax
 
 internal struct SwiftCodeEditorPane: Component {
-    let text: String
+    @Binding var text: String
     let highlightRange: Range<Int>?
     @Binding var lookupConfig: LookupConfig
     let lookupResult: LookupResultData?
-    let onInput: Function<Void, String>
     let onLookup: Function<Void, ClickPointInfo>
     let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
     let onLookupClose: Function<Void>
@@ -19,7 +18,7 @@ internal struct SwiftCodeEditorPane: Component {
     var deps: Deps? {
         [
             text, highlightRange, lookupConfig, lookupResult,
-            onInput, onLookup,
+            onLookup,
             onHoverRangeChange, onLookupClose,
         ]
     }
@@ -54,10 +53,9 @@ internal struct SwiftCodeEditorPane: Component {
                 scrollable: false
             ) {
                 SwiftCodeEditor(
-                    text: text,
+                    text: _text,
                     highlightRange: highlightRange,
                     isClickPointMode: isLookupMode,
-                    onInput: onInput,
                     onClickPoint: onLookupClick
                 )
             }

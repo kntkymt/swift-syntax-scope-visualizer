@@ -1,6 +1,7 @@
 import JavaScriptKit
 import React
 import SRTDOM
+import SwiftReactPlus
 
 public struct ClickPointInfo: Hashable, Sendable {
     public var utf8Offset: Int
@@ -14,23 +15,20 @@ public struct ClickPointInfo: Hashable, Sendable {
 
 public struct SwiftCodeEditor: Component {
     public init(
-        text: String,
+        text: Binding<String>,
         highlightRange: Range<Int>? = nil,
         isClickPointMode: Bool = false,
-        onInput: Function<Void, String>,
         onClickPoint: Function<Void, ClickPointInfo>? = nil
     ) {
-        self.text = text
+        self._text = text
         self.highlightRange = highlightRange
         self.isClickPointMode = isClickPointMode
-        self.onInput = onInput
         self.onClickPoint = onClickPoint
     }
 
-    public var text: String
+    @Binding public var text: String
     public var highlightRange: Range<Int>?
     public var isClickPointMode: Bool
-    public var onInput: Function<Void, String>
     public var onClickPoint: Function<Void, ClickPointInfo>?
 
     @Ref var gutterRef: JSHTMLElement?
@@ -39,7 +37,7 @@ public struct SwiftCodeEditor: Component {
     @Effect var highlightEffect
 
     public var deps: Deps? {
-        [text, highlightRange, isClickPointMode, onInput, onClickPoint]
+        [text, highlightRange, isClickPointMode, onClickPoint]
     }
 
     public func render() -> Node {
@@ -47,8 +45,7 @@ public struct SwiftCodeEditor: Component {
         let lineNumbers = (1...lineCount).map(String.init).joined(separator: "\n")
 
         let onInputEvent = EventListener { (event) in
-            let text = try! String.mustConstruct(from: event.jsValue.target.value)
-            onInput(text)
+            text = try! String.mustConstruct(from: event.jsValue.target.value)
         }
 
         // Keep the gutter and the highlight overlay's scroll position in sync with the textarea
