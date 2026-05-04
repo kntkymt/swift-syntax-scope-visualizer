@@ -9,7 +9,7 @@ import SwiftSyntaxScope
 public struct RootView: Component {
 
     @State var text: String = ""
-    @State var parsed: ParsedSource = .init(text: "", syntax: Parser.parse(source: ""))
+    @State var parsed: ParsedSource = ParsedSource(from: "")
     @State var highlightedRange: Range<AbsolutePosition>? = nil
     @State var lookupConfig: LookupConfig = .default
     @State var lookupResult: LookupResultData? = nil
@@ -32,7 +32,7 @@ public struct RootView: Component {
         $parseEffect(deps: [text]) {
             let pendingText = text
             let timer = JSTimer(millisecondsDelay: 500) {
-                parsed = ParsedSource(text: pendingText, syntax: Parser.parse(source: pendingText))
+                parsed = ParsedSource(from: pendingText)
             }
 
             return {
@@ -45,7 +45,7 @@ public struct RootView: Component {
         }
 
         $onLookup(deps: [parsed.syntax.id, lookupConfig]) { (info) in
-            self.lookupResult = parsed.syntax.makeLookupResult(
+            self.lookupResult = parsed.scope.makeLookupResult(
                 info: info,
                 config: lookupConfig
             )
@@ -92,7 +92,7 @@ public struct RootView: Component {
                         onHoverRangeChange: onHoverRangeChange
                     )
                     SwiftSyntaxScopePane(
-                        syntax: parsed.syntax,
+                        scope: parsed.scope,
                         onHoverRangeChange: onHoverRangeChange
                     )
                 }
@@ -114,8 +114,18 @@ public struct RootView: Component {
 }
 
 struct ParsedSource: Equatable {
+    init(from text: String) {
+        self.text = text
+        let syntax = Parser.parse(source: text)
+        self.syntax = syntax
+        let scope = SourceFileScope(syntax: syntax)
+        scope.buildFullyExpandedTree()
+        self.scope = scope
+    }
+
     let text: String
     let syntax: SourceFileSyntax
+    let scope: SourceFileScope
 
     static func == (lhs: ParsedSource, rhs: ParsedSource) -> Bool {
         lhs.text == rhs.text
@@ -136,14 +146,14 @@ internal struct LookupResultData: Equatable {
     var syntaxScopeNames: [LookupResultName]
 }
 
-private extension SourceFileSyntax {
+private extension SourceFileScope {
     func makeLookupResult(
         info: ClickPointInfo,
         config: LookupConfig
     ) -> LookupResultData {
         let position = AbsolutePosition(utf8Offset: info.utf8Offset)
         let identifier = config.name.asLookupIdentifier
-        let converter = SourceLocationConverter(fileName: "", tree: root)
+        let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
         let location = converter.location(for: position)
         let sourceLocationDescription = "\(location.line):\(location.column)"
         let lexicalConfig = SwiftLexicalLookup.LookupConfig(
@@ -153,7 +163,7 @@ private extension SourceFileSyntax {
             config.swiftSyntaxScope.includeOuterResults ? .includeOuterResults : []
 
         let lexicalLookupNames =
-            (token(at: position)?.lookup(identifier, with: lexicalConfig) ?? [])
+            (syntax.token(at: position)?.lookup(identifier, with: lexicalConfig) ?? [])
             .flatMap { (result: LookupResult) -> [LookupResultName] in
                 switch result {
                 case .fromScope(_, let names):
@@ -194,7 +204,7 @@ private extension SourceFileSyntax {
                 }
             }
 
-        let syntaxScopeNames = lexicalLookup(
+        let syntaxScopeNames = self.lexicalLookup(
             position: position,
             name: identifier,
             options: options

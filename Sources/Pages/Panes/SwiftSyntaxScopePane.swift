@@ -3,18 +3,15 @@ import SwiftSyntax
 import SwiftSyntaxScope
 
 internal struct SwiftSyntaxScopePane: Component {
-    let syntax: SourceFileSyntax
+    let scope: SourceFileScope
     let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
 
     var deps: Deps? {
-        [syntax.id, onHoverRangeChange]
+        [ObjectIdentifier(scope), onHoverRangeChange]
     }
 
     func render() -> Node {
-        let scope = SourceFileScope(syntax: syntax)
-        scope.buildFullyExpandedTree()
-
-        return Pane(
+        Pane(
             title: "Swift Syntax Scope (referencing swift compiler)",
             border: [],
         ) {
