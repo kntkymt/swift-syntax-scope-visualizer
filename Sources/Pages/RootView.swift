@@ -82,9 +82,12 @@ public struct RootView: Component {
                             $0.lowerBound.utf8Offset..<$0.upperBound.utf8Offset
                         },
                         lookupConfig: lookupConfig,
+                        lookupResult: lookupResult,
                         onInput: onTextChange,
                         onLookup: onLookup,
-                        onLookupConfigChange: onLookupConfigChange
+                        onLookupConfigChange: onLookupConfigChange,
+                        onHoverRangeChange: onHoverRangeChange,
+                        onLookupClose: onLookupClose
                     )
                     SwiftLexicalLookupPane(
                         syntax: parsed.syntax,
@@ -97,14 +100,6 @@ public struct RootView: Component {
                         onHoverRangeChange: onHoverRangeChange
                     )
                 }
-            }
-
-            if let lookupResult {
-                LookupResultPopover(
-                    result: lookupResult,
-                    onHoverRangeChange: onHoverRangeChange,
-                    onClose: onLookupClose
-                )
             }
         }
     }

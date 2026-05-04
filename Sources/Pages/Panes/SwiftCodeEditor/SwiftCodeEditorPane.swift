@@ -1,19 +1,27 @@
 import React
 import SwiftCodeEditor
+import SwiftSyntax
 
 internal struct SwiftCodeEditorPane: Component {
     let text: String
     let highlightRange: Range<Int>?
     let lookupConfig: LookupConfig
+    let lookupResult: LookupResultData?
     let onInput: Function<Void, String>
     let onLookup: Function<Void, ClickPointInfo>
     let onLookupConfigChange: Function<Void, LookupConfig>
+    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+    let onLookupClose: Function<Void>
 
     @State var isLookupMode: Bool = false
     @Callback var onLookupClick: Function<Void, ClickPointInfo>
 
     var deps: Deps? {
-        [text, highlightRange, lookupConfig, onInput, onLookup, onLookupConfigChange]
+        [
+            text, highlightRange, lookupConfig, lookupResult,
+            onInput, onLookup, onLookupConfigChange,
+            onHoverRangeChange, onLookupClose,
+        ]
     }
 
     func render() -> Node {
@@ -22,38 +30,48 @@ internal struct SwiftCodeEditorPane: Component {
             isLookupMode = false
         }
 
-        return Pane(
-            header: {
-                h4(style: .init().margin("0")) { "Source Code" }
+        return Fragment {
+            Pane(
+                header: {
+                    h4(style: .init().margin("0")) { "Source Code" }
 
-                div(
-                    style: .init()
-                        .display("flex")
-                        .flexDirection("row")
-                        .gap("8px")
-                ) {
-                    Button(
-                        isActive: isLookupMode,
-                        onClick: Function { isLookupMode.toggle() }
+                    div(
+                        style: .init()
+                            .display("flex")
+                            .flexDirection("row")
+                            .gap("8px")
                     ) {
-                        isLookupMode ? "Lookup Mode: ON" : "Lookup Mode: OFF"
+                        Button(
+                            isActive: isLookupMode,
+                            onClick: Function { isLookupMode.toggle() }
+                        ) {
+                            isLookupMode ? "Lookup Mode: ON" : "Lookup Mode: OFF"
+                        }
+                        LookupSettingsButton(
+                            config: lookupConfig,
+                            onConfigChange: onLookupConfigChange
+                        )
                     }
-                    LookupSettingsButton(
-                        config: lookupConfig,
-                        onConfigChange: onLookupConfigChange
-                    )
-                }
-            },
-            border: .right,
-            scrollable: false
-        ) {
-            SwiftCodeEditor(
-                text: text,
-                highlightRange: highlightRange,
-                isClickPointMode: isLookupMode,
-                onInput: onInput,
-                onClickPoint: onLookupClick
-            )
+                },
+                border: .right,
+                scrollable: false
+            ) {
+                SwiftCodeEditor(
+                    text: text,
+                    highlightRange: highlightRange,
+                    isClickPointMode: isLookupMode,
+                    onInput: onInput,
+                    onClickPoint: onLookupClick
+                )
+            }
+
+            if let lookupResult {
+                LookupResultPopover(
+                    result: lookupResult,
+                    onHoverRangeChange: onHoverRangeChange,
+                    onClose: onLookupClose
+                )
+            }
         }
     }
 }
