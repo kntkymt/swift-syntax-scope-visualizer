@@ -3,6 +3,7 @@ import SRTJavaScriptKitEx
 import SwiftCodeEditor
 @_spi(Experimental) import SwiftLexicalLookup
 import SwiftParser
+import SwiftReactPlus
 import SwiftSyntax
 import SwiftSyntaxScope
 
@@ -10,12 +11,11 @@ public struct RootView: Component {
     @State var text: String = ""
     @State var parsed: ParsedSource = ParsedSource(from: "")
     @State var highlightedRange: Range<AbsolutePosition>? = nil
-    @State var lookupConfig: LookupConfig = .default
+    @BindableState var lookupConfig: LookupConfig = .default
     @State var lookupResult: LookupResultData? = nil
     @Effect var parseEffect
     @Callback var onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
     @Callback var onLookup: Function<Void, ClickPointInfo>
-    @Callback var onLookupConfigChange: Function<Void, LookupConfig>
     @Callback var onLookupClose: Function<Void>
 
     public init() {}
@@ -50,10 +50,6 @@ public struct RootView: Component {
             )
         }
 
-        $onLookupConfigChange(deps: []) { (newConfig) in
-            self.lookupConfig = newConfig
-        }
-
         $onLookupClose(deps: []) {
             self.lookupResult = nil
         }
@@ -81,11 +77,10 @@ public struct RootView: Component {
                         highlightRange: highlightedRange.map {
                             $0.lowerBound.utf8Offset..<$0.upperBound.utf8Offset
                         },
-                        lookupConfig: lookupConfig,
+                        lookupConfig: $lookupConfig,
                         lookupResult: lookupResult,
                         onInput: onTextChange,
                         onLookup: onLookup,
-                        onLookupConfigChange: onLookupConfigChange,
                         onHoverRangeChange: onHoverRangeChange,
                         onLookupClose: onLookupClose
                     )

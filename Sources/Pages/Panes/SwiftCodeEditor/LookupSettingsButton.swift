@@ -1,12 +1,12 @@
 import React
+import SwiftReactPlus
 
 struct LookupSettingsButton: Component {
     var deps: Deps? {
-        [config, onConfigChange]
+        [_config]
     }
 
-    let config: LookupConfig
-    let onConfigChange: Function<Void, LookupConfig>
+    @Binding var config: LookupConfig
 
     @State private var isPopoverOpen: Bool = false
 
@@ -54,6 +54,6 @@ private extension LookupSettingsButton {
     func update(_ mutate: (inout LookupConfig) -> Void) {
         var newConfig = config
         mutate(&newConfig)
-        onConfigChange(newConfig)
+        config = newConfig
     }
 }

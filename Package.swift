@@ -25,6 +25,7 @@ let package = Package(
             name: "Pages",
             dependencies: [
                 "SwiftCodeEditor",
+                "SwiftReactPlus",
                 .product(name: "React", package: "swift-react"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
@@ -34,6 +35,12 @@ let package = Package(
         ),
         .target(
             name: "SwiftCodeEditor",
+            dependencies: [
+                .product(name: "React", package: "swift-react")
+            ]
+        ),
+        .target(
+            name: "SwiftReactPlus",
             dependencies: [
                 .product(name: "React", package: "swift-react")
             ]
