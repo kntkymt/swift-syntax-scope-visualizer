@@ -2,7 +2,7 @@ import SwiftSyntax
 @_spi(Experimental) import SwiftLexicalLookup
 
 internal extension Range<AbsolutePosition> {
-    var displayedUpperBound: AbsolutePosition {
+    var lastContainedPosition: AbsolutePosition {
         guard lowerBound != upperBound else {
             return upperBound
         }
@@ -64,9 +64,9 @@ internal extension ScopeSyntax {
         // the `else`) so `if let x = ...` style names are visible.
         let position: AbsolutePosition
         if let ifExpr = self.as(IfExprSyntax.self), ifExpr.elseKeyword != nil {
-            position = ifExpr.body.trimmedRange.displayedUpperBound
+            position = ifExpr.body.trimmedRange.lastContainedPosition
         } else {
-            position = trimmedRange.displayedUpperBound
+            position = trimmedRange.lastContainedPosition
         }
 
         let config = SwiftLexicalLookup.LookupConfig(finishInSequentialScope: true)
