@@ -8,7 +8,7 @@ internal struct SwiftLexicalLookupPane: Component {
     let highlightedSyntaxIds: Set<SyntaxIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
-    @BindableState var config: LexicalLookupConfig = .default
+    @BindableState var config: VisibleNodeConfig = .default
 
     var deps: Deps? {
         [
@@ -57,7 +57,7 @@ private struct SyntaxTreeNodeView: Component {
 
     let node: any SyntaxProtocol
     let converter: SourceLocationConverter
-    let config: LexicalLookupConfig
+    let config: SwiftLexicalLookupPane.VisibleNodeConfig
     let highlightedSyntaxIds: Set<SyntaxIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
@@ -170,7 +170,7 @@ internal extension SyntaxProtocol {
 
     // Lift scope descendants of hidden non-scope children up to this level so the
     // visible tree only contains scope nodes while preserving ancestor order.
-    func visibleChildren(config: LexicalLookupConfig) -> [Syntax] {
+    func visibleChildren(config: SwiftLexicalLookupPane.VisibleNodeConfig) -> [Syntax] {
         children(viewMode: .sourceAccurate).flatMap { (child) -> [Syntax] in
             if config.hideEmptyCollections,
                 child.syntaxNodeType.structure.isCollection,

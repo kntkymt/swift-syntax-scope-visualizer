@@ -6,7 +6,7 @@ struct SettingsButton: Component {
         [_config]
     }
 
-    @Binding var config: LexicalLookupConfig
+    @Binding var config: SwiftLexicalLookupPane.VisibleNodeConfig
 
     @State private var isPopoverOpen: Bool = false
 
