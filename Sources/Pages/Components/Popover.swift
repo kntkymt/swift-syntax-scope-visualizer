@@ -44,7 +44,7 @@ internal struct Popover: Component {
         if scrollable {
             boxStyle =
                 boxStyle
-                .maxWidth("420px")
+                .maxWidth("630px")
                 .maxHeight("60vh")
                 .overflow("auto")
         }
