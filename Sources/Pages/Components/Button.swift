@@ -37,7 +37,7 @@ internal struct Button: Component {
         let style: Style = .init()
             .padding("4px 10px")
             .border("1px solid #ccc")
-            .borderRadius("4px")
+            .borderRadius("8px")
             .backgroundColor(isActive ? Color.buttonActiveBackground : "#fff")
             .color("#000")
             .cursor("pointer")
