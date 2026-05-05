@@ -4,20 +4,20 @@ import SwiftSyntax
 internal struct LookupResultPopover: Component {
     internal init(
         result: LookupResultData,
-        onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>,
+        onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>,
         onClose: Function<Void>
     ) {
         self.result = result
-        self.onHoverRangeChange = onHoverRangeChange
+        self.onUpdateHighlightedSourceCodeRange = onUpdateHighlightedSourceCodeRange
         self.onClose = onClose
     }
 
     private var result: LookupResultData
-    private var onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+    private var onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
     private var onClose: Function<Void>
 
     var deps: Deps? {
-        [result, onHoverRangeChange, onClose]
+        [result, onUpdateHighlightedSourceCodeRange, onClose]
     }
 
     func render() -> Node {
@@ -32,12 +32,12 @@ internal struct LookupResultPopover: Component {
             LookupResultSection(
                 title: "Swift Lexical Lookup",
                 names: result.lexicalLookupNames,
-                onHoverRangeChange: onHoverRangeChange
+                onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
             )
             LookupResultSection(
                 title: "Swift Syntax Scope",
                 names: result.syntaxScopeNames,
-                onHoverRangeChange: onHoverRangeChange
+                onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
             )
         }
     }
@@ -47,12 +47,12 @@ private struct LookupResultSection: Component {
     var key: AnyHashable? { title }
 
     var deps: Deps? {
-        [title, names, onHoverRangeChange]
+        [title, names, onUpdateHighlightedSourceCodeRange]
     }
 
     let title: String
     let names: [LookupResultName]
-    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+    let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
     func render() -> Node {
         div(
@@ -70,7 +70,7 @@ private struct LookupResultSection: Component {
                     LookupResultRow(
                         key: index,
                         name: name,
-                        onHoverRangeChange: onHoverRangeChange
+                        onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
                     )
                 }
             }
@@ -82,27 +82,27 @@ private struct LookupResultRow: Component {
     var key: AnyHashable?
 
     var deps: Deps? {
-        [key, name, onHoverRangeChange]
+        [key, name, onUpdateHighlightedSourceCodeRange]
     }
 
     let name: LookupResultName
-    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+    let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
     @Callback var onHoverChange: Function<Void, Bool>
 
     init(
         key: AnyHashable? = nil,
         name: LookupResultName,
-        onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+        onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
     ) {
         self.key = key
         self.name = name
-        self.onHoverRangeChange = onHoverRangeChange
+        self.onUpdateHighlightedSourceCodeRange = onUpdateHighlightedSourceCodeRange
     }
 
     func render() -> Node {
-        $onHoverChange(deps: [name, onHoverRangeChange]) { (isHovered) in
-            onHoverRangeChange(isHovered ? name.range : nil)
+        $onHoverChange(deps: [name, onUpdateHighlightedSourceCodeRange]) { (isHovered) in
+            onUpdateHighlightedSourceCodeRange(isHovered ? name.range : nil)
         }
 
         return HoverHighlight(onHoverChange: onHoverChange) {

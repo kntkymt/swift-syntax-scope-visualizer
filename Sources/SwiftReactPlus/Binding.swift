@@ -1,30 +1,17 @@
 import React
 
 @propertyWrapper
-public struct Binding<Value: Equatable>: Hashable {
+public struct Binding<Value: Hashable>: Hashable {
     public var wrappedValue: Value {
-        get { get() }
-        nonmutating set { set(newValue) }
+        get { value }
+        nonmutating set { setValue(newValue) }
     }
 
-    private var get: Function<Value>
-    private var set: Function<Void, Value>
+    private var value: Value
+    public let setValue: Function<Void, Value>
 
-    internal init(get: Function<Value>, set: Function<Void, Value>) {
-        self.get = get
-        self.set = set
-    }
-}
-
-public extension State {
-    var binding: Binding<Value> {
-        Binding(
-            get: Function {
-                wrappedValue
-            },
-            set: Function { newValue in
-                wrappedValue = newValue
-            }
-        )
+    internal init(value: Value, setValue: Function<Void, Value>) {
+        self.value = value
+        self.setValue = setValue
     }
 }

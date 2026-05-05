@@ -16,18 +16,18 @@ public struct ClickPointInfo: Hashable, Sendable {
 public struct SwiftCodeEditor: Component {
     public init(
         text: Binding<String>,
-        highlightRange: Range<Int>? = nil,
+        highlightedRange: Range<Int>? = nil,
         isClickPointMode: Bool = false,
         onClickPoint: Function<Void, ClickPointInfo>? = nil
     ) {
         self._text = text
-        self.highlightRange = highlightRange
+        self.highlightedRange = highlightedRange
         self.isClickPointMode = isClickPointMode
         self.onClickPoint = onClickPoint
     }
 
     @Binding public var text: String
-    public var highlightRange: Range<Int>?
+    public var highlightedRange: Range<Int>?
     public var isClickPointMode: Bool
     public var onClickPoint: Function<Void, ClickPointInfo>?
 
@@ -37,7 +37,7 @@ public struct SwiftCodeEditor: Component {
     @Effect var highlightEffect
 
     public var deps: Deps? {
-        [text, highlightRange, isClickPointMode, onClickPoint]
+        [_text, highlightedRange, isClickPointMode, onClickPoint]
     }
 
     public func render() -> Node {
@@ -88,7 +88,7 @@ public struct SwiftCodeEditor: Component {
         // Highlight rectangles are positioned via the DOM Range API so widths are pixel-accurate
         // for any character (CJK, emoji ZWJ sequences, etc.). React doesn't manage these nodes;
         // the cleanup closure removes them before the next setup runs.
-        $highlightEffect(deps: [highlightRange, text]) {
+        $highlightEffect(deps: [highlightedRange, text]) {
             syncOverlayScroll()
             let installed = installHighlightRects()
 
@@ -249,7 +249,7 @@ private extension SwiftCodeEditor {
     }
 
     func installHighlightRects() -> [JSValue] {
-        guard let overlay = overlayRef, let range = highlightRange else { return [] }
+        guard let overlay = overlayRef, let range = highlightedRange else { return [] }
 
         let utf8 = text.utf8
         guard

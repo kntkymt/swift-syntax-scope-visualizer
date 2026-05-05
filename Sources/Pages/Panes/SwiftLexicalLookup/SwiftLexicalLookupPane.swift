@@ -6,12 +6,16 @@ import SwiftReactPlus
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: any SyntaxProtocol
     let highlightedSyntaxIds: Set<SyntaxIdentifier>
-    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+    let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
-    @State var config: LexicalLookupConfig = .default
+    @BindableState var config: LexicalLookupConfig = .default
 
     var deps: Deps? {
-        [syntax.id, highlightedSyntaxIds, onHoverRangeChange]
+        [
+            syntax.id,
+            highlightedSyntaxIds,
+            onUpdateHighlightedSourceCodeRange,
+        ]
     }
 
     func render() -> Node {
@@ -21,7 +25,7 @@ internal struct SwiftLexicalLookupPane: Component {
             header: {
                 h4(style: .init().margin("0")) { "Swift Lexical Lookup" }
 
-                SettingsButton(config: _config.binding)
+                SettingsButton(config: $config)
             },
             border: .right
         ) {
@@ -31,7 +35,7 @@ internal struct SwiftLexicalLookupPane: Component {
                     converter: converter,
                     config: config,
                     highlightedSyntaxIds: highlightedSyntaxIds,
-                    onHoverRangeChange: onHoverRangeChange
+                    onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
                 )
             }
         }
@@ -42,14 +46,20 @@ private struct SyntaxTreeNodeView: Component {
     var key: AnyHashable? { node.id }
 
     var deps: Deps? {
-        [node.id, ObjectIdentifier(converter), config, highlightedSyntaxIds, onHoverRangeChange]
+        [
+            node.id,
+            ObjectIdentifier(converter),
+            config,
+            highlightedSyntaxIds,
+            onUpdateHighlightedSourceCodeRange,
+        ]
     }
 
     let node: any SyntaxProtocol
     let converter: SourceLocationConverter
     let config: LexicalLookupConfig
     let highlightedSyntaxIds: Set<SyntaxIdentifier>
-    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
+    let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
     @Callback var onHoverChange: Function<Void, Bool>
 
@@ -63,8 +73,8 @@ private struct SyntaxTreeNodeView: Component {
         let declNames = node.declNames
         let isLookupOrigin = highlightedSyntaxIds.contains(node.id)
 
-        $onHoverChange(deps: [node.id, onHoverRangeChange]) { (isHovered) in
-            onHoverRangeChange(isHovered ? node.trimmedRange : nil)
+        $onHoverChange(deps: [node.id, onUpdateHighlightedSourceCodeRange]) { (isHovered) in
+            onUpdateHighlightedSourceCodeRange(isHovered ? node.trimmedRange : nil)
         }
 
         return HoverHighlight(onHoverChange: onHoverChange) {
@@ -134,7 +144,7 @@ private struct SyntaxTreeNodeView: Component {
                         converter: converter,
                         config: config,
                         highlightedSyntaxIds: highlightedSyntaxIds,
-                        onHoverRangeChange: onHoverRangeChange
+                        onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
                     )
                 }
             }

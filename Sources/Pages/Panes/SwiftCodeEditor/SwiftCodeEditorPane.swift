@@ -5,11 +5,11 @@ import SwiftSyntax
 
 internal struct SwiftCodeEditorPane: Component {
     @Binding var text: String
-    let highlightRange: Range<Int>?
     @Binding var lookupConfig: LookupConfig
+    @Binding var highlightedSourceCodeRange: Range<AbsolutePosition>?
+
     let lookupResult: LookupResultData?
     let onLookup: Function<Void, ClickPointInfo>
-    let onHoverRangeChange: Function<Void, Range<AbsolutePosition>?>
     let onLookupClose: Function<Void>
 
     @State var isLookupMode: Bool = false
@@ -17,9 +17,12 @@ internal struct SwiftCodeEditorPane: Component {
 
     var deps: Deps? {
         [
-            text, highlightRange, lookupConfig, lookupResult,
+            _text,
+            _lookupConfig,
+            _highlightedSourceCodeRange,
+            lookupResult,
             onLookup,
-            onHoverRangeChange, onLookupClose,
+            onLookupClose,
         ]
     }
 
@@ -54,7 +57,9 @@ internal struct SwiftCodeEditorPane: Component {
             ) {
                 SwiftCodeEditor(
                     text: _text,
-                    highlightRange: highlightRange,
+                    highlightedRange: highlightedSourceCodeRange.map {
+                        $0.lowerBound.utf8Offset..<$0.upperBound.utf8Offset
+                    },
                     isClickPointMode: isLookupMode,
                     onClickPoint: onLookupClick
                 )
@@ -63,7 +68,7 @@ internal struct SwiftCodeEditorPane: Component {
             if let lookupResult {
                 LookupResultPopover(
                     result: lookupResult,
-                    onHoverRangeChange: onHoverRangeChange,
+                    onUpdateHighlightedSourceCodeRange: _highlightedSourceCodeRange.setValue,
                     onClose: onLookupClose
                 )
             }
