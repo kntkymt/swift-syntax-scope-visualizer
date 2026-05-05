@@ -8,15 +8,14 @@ import SRTJavaScriptKitEx
 @propertyWrapper
 internal struct ParseSourceHook: Hook {
     internal init() {
-        // TODO: Optionalで管理
-        _parsed = State(wrappedValue: Self.parse(sourceCode: ""))
+        _parsed = State()
         _parseEffect = Effect()
     }
 
-    @State private var parsed: ParsedSource
+    @State private var parsed: ParsedSource?
     @Effect private var parseEffect
 
-    internal var wrappedValue: ParsedSource { parsed }
+    internal var wrappedValue: ParsedSource? { parsed }
     internal var projectedValue: Self { self }
 
     // Debounce text -> SourceFileSyntax. Cleanup captures `timer` so that

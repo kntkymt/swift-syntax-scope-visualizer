@@ -20,8 +20,9 @@ internal struct LookupHook: Hook {
     internal var wrappedValue: LookupResultData? { result }
     internal var projectedValue: Self { self }
 
-    internal func callAsFunction(scope: SourceFileScope, config: LookupConfig) {
-        $onLookup(deps: [scope.syntax.id, config]) { (info) in
+    internal func callAsFunction(scope: SourceFileScope?, config: LookupConfig) {
+        $onLookup(deps: [scope?.syntax.id, config]) { (info) in
+            guard let scope else { return }
             result = scope.makeLookupResult(info: info, config: config)
         }
 

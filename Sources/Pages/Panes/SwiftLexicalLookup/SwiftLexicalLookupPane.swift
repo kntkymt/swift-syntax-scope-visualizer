@@ -4,7 +4,7 @@ import React
 import SwiftReactPlus
 
 internal struct SwiftLexicalLookupPane: Component {
-    let syntax: any SyntaxProtocol
+    let syntax: (any SyntaxProtocol)?
     let highlightedSyntaxIds: Set<SyntaxIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
@@ -12,16 +12,14 @@ internal struct SwiftLexicalLookupPane: Component {
 
     var deps: Deps? {
         [
-            syntax.id,
+            syntax?.id,
             highlightedSyntaxIds,
             onUpdateHighlightedSourceCodeRange,
         ]
     }
 
     func render() -> Node {
-        let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
-
-        return Pane(
+        Pane(
             header: {
                 h4(style: .init().margin("0")) { "Swift Lexical Lookup" }
 
@@ -29,14 +27,18 @@ internal struct SwiftLexicalLookupPane: Component {
             },
             border: .right
         ) {
-            div(style: .init().whiteSpace("nowrap")) {
-                SyntaxTreeNodeView(
-                    node: syntax,
-                    converter: converter,
-                    config: config,
-                    highlightedSyntaxIds: highlightedSyntaxIds,
-                    onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
-                )
+            if let syntax {
+                let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
+
+                div(style: .init().whiteSpace("nowrap")) {
+                    SyntaxTreeNodeView(
+                        node: syntax,
+                        converter: converter,
+                        config: config,
+                        highlightedSyntaxIds: highlightedSyntaxIds,
+                        onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
+                    )
+                }
             }
         }
     }

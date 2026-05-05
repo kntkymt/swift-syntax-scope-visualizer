@@ -27,14 +27,14 @@ public struct RootView: Component {
     @BindableState var highlightedSourceCodeRange: Range<AbsolutePosition>? = nil
     @BindableState var lookupConfig: LookupConfig = .default
 
-    @ParseSourceHook var parsed: ParsedSource
+    @ParseSourceHook var parsed: ParsedSource?
     @LookupHook var lookupResult: LookupResultData?
 
     public init() {}
 
     public func render() -> Node {
         $parsed(sourceCode: sourceCode)
-        $lookupResult(scope: parsed.scope, config: lookupConfig)
+        $lookupResult(scope: parsed?.scope, config: lookupConfig)
 
         return div(
             style: .init()
@@ -63,12 +63,12 @@ public struct RootView: Component {
                         onLookupClose: $lookupResult.onLookupClose
                     )
                     SwiftLexicalLookupPane(
-                        syntax: parsed.syntax,
+                        syntax: parsed?.syntax,
                         highlightedSyntaxIds: lookupResult?.lexicalLookupOriginSyntaxIds ?? [],
                         onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
                     )
                     SwiftSyntaxScopePane(
-                        scope: parsed.scope,
+                        scope: parsed?.scope,
                         highlightedScopeIds: lookupResult?.syntaxScopeOriginScopeIds ?? [],
                         onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
                     )

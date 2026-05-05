@@ -3,13 +3,13 @@ import SwiftSyntax
 import SwiftSyntaxScope
 
 internal struct SwiftSyntaxScopePane: Component {
-    let scope: SourceFileScope
+    let scope: SourceFileScope?
     let highlightedScopeIds: Set<ObjectIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
     var deps: Deps? {
         [
-            ObjectIdentifier(scope),
+            scope.map { ObjectIdentifier($0) },
             highlightedScopeIds,
             onUpdateHighlightedSourceCodeRange,
         ]
@@ -20,12 +20,14 @@ internal struct SwiftSyntaxScopePane: Component {
             title: "Swift Syntax Scope (referencing swift compiler)",
             border: [],
         ) {
-            div(style: .init().whiteSpace("nowrap")) {
-                ScopeTreeNodeView(
-                    scope: scope,
-                    highlightedScopeIds: highlightedScopeIds,
-                    onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
-                )
+            if let scope {
+                div(style: .init().whiteSpace("nowrap")) {
+                    ScopeTreeNodeView(
+                        scope: scope,
+                        highlightedScopeIds: highlightedScopeIds,
+                        onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
+                    )
+                }
             }
         }
     }
