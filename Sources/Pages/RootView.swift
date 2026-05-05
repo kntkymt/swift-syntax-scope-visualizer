@@ -20,6 +20,8 @@ enum Constant {
             let f = 5
         }
         """
+
+    static let githubURL = "https://github.com/kntkymt/swift-syntax-scope-visualizer"
 }
 
 public struct RootView: Component {
@@ -44,7 +46,21 @@ public struct RootView: Component {
                 .overflow("hidden")
         ) {
             Pane(
-                title: "Swift Syntax Scope Visualizer",
+                header: {
+                    div(
+                        style: .init()
+                            .display("flex")
+                            .flexDirection("row")
+                            .alignItems("center")
+                            .gap("8px")
+                    ) {
+                        h4(style: .init().margin("0")) { "Swift Syntax Scope Visualizer" }
+
+                        Button(href: Constant.githubURL) {
+                            "GitHub"
+                        }
+                    }
+                },
                 border: [],
                 scrollable: false
             ) {
