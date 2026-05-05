@@ -4,7 +4,7 @@ import SwiftReactPlus
 import SwiftSyntax
 
 internal struct SwiftCodeEditorPane: Component {
-    @Binding var text: String
+    @Binding var sourceCode: String
     @Binding var lookupConfig: LookupConfig
     @Binding var highlightedSourceCodeRange: Range<AbsolutePosition>?
 
@@ -17,7 +17,7 @@ internal struct SwiftCodeEditorPane: Component {
 
     var deps: Deps? {
         [
-            _text,
+            _sourceCode,
             _lookupConfig,
             _highlightedSourceCodeRange,
             lookupResult,
@@ -56,7 +56,7 @@ internal struct SwiftCodeEditorPane: Component {
                 scrollable: false
             ) {
                 SwiftCodeEditor(
-                    text: _text,
+                    text: _sourceCode,
                     highlightedRange: highlightedSourceCodeRange.map {
                         $0.lowerBound.utf8Offset..<$0.upperBound.utf8Offset
                     },

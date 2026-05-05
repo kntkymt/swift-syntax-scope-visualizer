@@ -38,6 +38,8 @@ private struct ScopeTreeNodeView: Component {
     let highlightedScopeIds: Set<ObjectIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
+    @Callback var onHoverChange: Function<Void, Bool>
+
     var deps: Deps? {
         [
             ObjectIdentifier(scope),
@@ -45,8 +47,6 @@ private struct ScopeTreeNodeView: Component {
             onUpdateHighlightedSourceCodeRange,
         ]
     }
-
-    @Callback var onHoverChange: Function<Void, Bool>
 
     func render() -> Node {
         let names = scope.introducedLookupNames

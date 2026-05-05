@@ -7,9 +7,9 @@ import SwiftSyntax
 import SwiftSyntaxScope
 
 public struct RootView: Component {
-    @BindableState var text: String = ""
-    @BindableState var lookupConfig: LookupConfig = .default
+    @BindableState var sourceCode: String = ""
     @BindableState var highlightedSourceCodeRange: Range<AbsolutePosition>? = nil
+    @BindableState var lookupConfig: LookupConfig = .default
 
     @ParseSourceHook var parsed: ParsedSource
     @LookupHook var lookupResult: LookupResultData?
@@ -17,7 +17,7 @@ public struct RootView: Component {
     public init() {}
 
     public func render() -> Node {
-        $parsed(text: text)
+        $parsed(sourceCode: sourceCode)
         $lookupResult(scope: parsed.scope, config: lookupConfig)
 
         return div(
@@ -39,7 +39,7 @@ public struct RootView: Component {
                         .height("100%")
                 ) {
                     SwiftCodeEditorPane(
-                        text: $text,
+                        sourceCode: $sourceCode,
                         lookupConfig: $lookupConfig,
                         highlightedSourceCodeRange: $highlightedSourceCodeRange,
                         lookupResult: lookupResult,

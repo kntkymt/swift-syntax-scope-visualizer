@@ -9,7 +9,7 @@ import SRTJavaScriptKitEx
 internal struct ParseSourceHook: Hook {
     internal init() {
         // TODO: Optionalで管理
-        _parsed = State(wrappedValue: Self.parse(text: ""))
+        _parsed = State(wrappedValue: Self.parse(sourceCode: ""))
         _parseEffect = Effect()
     }
 
@@ -22,11 +22,11 @@ internal struct ParseSourceHook: Hook {
     // Debounce text -> SourceFileSyntax. Cleanup captures `timer` so that
     // dropping the closure releases the JSTimer, triggering clearTimeout
     // via its deinit.
-    internal func callAsFunction(text: String) {
-        $parseEffect(deps: [text]) {
-            let pendingText = text
+    internal func callAsFunction(sourceCode: String) {
+        $parseEffect(deps: [sourceCode]) {
+            let pendingSourceCode = sourceCode
             let timer = JSTimer(millisecondsDelay: 500) {
-                self.parsed = Self.parse(text: pendingText)
+                self.parsed = Self.parse(sourceCode: pendingSourceCode)
             }
 
             return {
@@ -35,30 +35,30 @@ internal struct ParseSourceHook: Hook {
         }
     }
 
-    static func parse(text: String) -> ParsedSource {
-        let syntax = Parser.parse(source: text)
+    static func parse(sourceCode: String) -> ParsedSource {
+        let syntax = Parser.parse(source: sourceCode)
         let scope = SourceFileScope(syntax: syntax)
         scope.buildFullyExpandedTree()
-        return ParsedSource(text: text, syntax: syntax, scope: scope)
+        return ParsedSource(sourceCode: sourceCode, syntax: syntax, scope: scope)
     }
 }
 
 struct ParsedSource: Hashable {
-    let text: String
+    let sourceCode: String
     let syntax: SourceFileSyntax
     let scope: SourceFileScope
 
-    init(text: String, syntax: SourceFileSyntax, scope: SourceFileScope) {
-        self.text = text
+    init(sourceCode: String, syntax: SourceFileSyntax, scope: SourceFileScope) {
+        self.sourceCode = sourceCode
         self.syntax = syntax
         self.scope = scope
     }
 
     public static func == (a: Self, b: Self) -> Bool {
-        a.text == b.text
+        a.sourceCode == b.sourceCode
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(text)
+        hasher.combine(sourceCode)
     }
 }

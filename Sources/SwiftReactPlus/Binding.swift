@@ -7,7 +7,7 @@ public struct Binding<Value: Hashable>: Hashable {
         nonmutating set { setValue(newValue) }
     }
 
-    private var value: Value
+    public let value: Value
     public let setValue: Function<Void, Value>
 
     internal init(value: Value, setValue: Function<Void, Value>) {
