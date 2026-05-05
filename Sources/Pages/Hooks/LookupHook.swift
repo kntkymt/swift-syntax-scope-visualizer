@@ -32,22 +32,39 @@ internal struct LookupHook: Hook {
     }
 }
 
-internal struct LookupResultName: Hashable {
+internal struct LookupResultData: Hashable {
+    var anchorPoint: SIMD2<Double>
+    var sourceLocationDescription: String
+    var lexicalLookupResults: [LexicalLookupResultDisplay]
+    var syntaxScopeNames: [SyntaxScopeNameDisplay]
+    var lexicalLookupOriginSyntaxIds: Set<SyntaxIdentifier>
+    var syntaxScopeOriginScopeIds: Set<ObjectIdentifier>
+}
+
+internal struct LexicalLookupResultDisplay: Hashable {
+    var headerLabel: String
+    var headerRange: Range<AbsolutePosition>
+    var headerRangeDescription: String
+    var names: [LexicalLookupNameDisplay]
+}
+
+internal indirect enum LexicalLookupNameDisplay: Hashable {
+    case leaf(
+        label: String,
+        range: Range<AbsolutePosition>,
+        rangeDescription: String,
+        accessibleAfterDescription: String?
+    )
+    case equivalentNames([LexicalLookupNameDisplay])
+}
+
+internal struct SyntaxScopeNameDisplay: Hashable {
     var label: String
     var range: Range<AbsolutePosition>
     var rangeDescription: String
 }
 
-internal struct LookupResultData: Hashable {
-    var anchorPoint: SIMD2<Double>
-    var sourceLocationDescription: String
-    var lexicalLookupNames: [LookupResultName]
-    var syntaxScopeNames: [LookupResultName]
-    var lexicalLookupOriginSyntaxIds: Set<SyntaxIdentifier>
-    var syntaxScopeOriginScopeIds: Set<ObjectIdentifier>
-}
-
-extension SourceFileScope {
+private extension SourceFileScope {
     func makeLookupResult(
         info: ClickPointInfo,
         config: LookupConfig
@@ -65,60 +82,16 @@ extension SourceFileScope {
 
         let originToken = syntax.token(at: position)
 
-        let lexicalLookupNames =
+        let lexicalLookupResults =
             (originToken?.lookup(identifier, with: lexicalConfig) ?? [])
-            .flatMap { (result: LookupResult) -> [LookupResultName] in
-                switch result {
-                case .fromScope(_, let names):
-                    return names.flatMap(\.flattened).map { name in
-                        LookupResultName(
-                            label: name.displayDescription,
-                            range: name.syntax.trimmedRange,
-                            rangeDescription: name.syntax.sourceRange(converter: converter)
-                                .description
-                        )
-                    }
-                case .lookForMembers(let syntax):
-                    return [
-                        LookupResultName(
-                            label: "lookForMembers:\(syntax.syntaxNodeType)",
-                            range: syntax.trimmedRange,
-                            rangeDescription: syntax.sourceRange(converter: converter).description
-                        )
-                    ]
-                case .lookForGenericParameters(let extensionDecl):
-                    return [
-                        LookupResultName(
-                            label: "lookForGenericParameters:\(extensionDecl.syntaxNodeType)",
-                            range: extensionDecl.trimmedRange,
-                            rangeDescription: extensionDecl.sourceRange(converter: converter)
-                                .description
-                        )
-                    ]
-                case .lookForImplicitClosureParameters(let closureExpr):
-                    return [
-                        LookupResultName(
-                            label: "lookForImplicitClosureParameters:\(closureExpr.syntaxNodeType)",
-                            range: closureExpr.trimmedRange,
-                            rangeDescription: closureExpr.sourceRange(converter: converter)
-                                .description
-                        )
-                    ]
-                }
-            }
+            .map { $0.toDisplay(converter: converter) }
 
         let syntaxScopeNames = self.lexicalLookup(
             position: position,
             name: identifier,
             options: options
         )
-        .map { name in
-            LookupResultName(
-                label: "\(name.kind):\(name.text)",
-                range: name.syntax.trimmedRange,
-                rangeDescription: name.syntax.sourceRange(converter: converter).description
-            )
-        }
+        .map { $0.toDisplay(converter: converter) }
 
         let lexicalLookupOriginSyntaxIds: Set<SyntaxIdentifier> = {
             guard let token = originToken else { return [] }
@@ -145,10 +118,94 @@ extension SourceFileScope {
         return LookupResultData(
             anchorPoint: info.clientPoint,
             sourceLocationDescription: sourceLocationDescription,
-            lexicalLookupNames: lexicalLookupNames,
+            lexicalLookupResults: lexicalLookupResults,
             syntaxScopeNames: syntaxScopeNames,
             lexicalLookupOriginSyntaxIds: lexicalLookupOriginSyntaxIds,
             syntaxScopeOriginScopeIds: syntaxScopeOriginScopeIds
+        )
+    }
+}
+
+private extension SwiftLexicalLookup.LookupResult {
+    func toDisplay(converter: SourceLocationConverter) -> LexicalLookupResultDisplay {
+        let resultKindLabel: String
+        let headerSyntax: SyntaxProtocol
+        let typeLabel: String
+        let names: [SwiftLexicalLookup.LookupName]
+        switch self {
+        case .fromScope(let syntax, let withNames):
+            resultKindLabel = "fromScope"
+            headerSyntax = syntax
+            typeLabel =
+                (syntax.asProtocol(SyntaxProtocol.self) as? ScopeSyntax)?.scopeDebugName
+                ?? "\(syntax.syntaxNodeType)"
+            names = withNames
+        case .lookForMembers(let syntax):
+            resultKindLabel = "lookForMembers"
+            headerSyntax = syntax
+            typeLabel = "\(syntax.syntaxNodeType)"
+            names = []
+        case .lookForGenericParameters(let extensionDecl):
+            resultKindLabel = "lookForGenericParameters"
+            headerSyntax = extensionDecl
+            typeLabel = "\(extensionDecl.syntaxNodeType)"
+            names = []
+        case .lookForImplicitClosureParameters(let closureExpr):
+            resultKindLabel = "lookForImplicitClosureParameters"
+            headerSyntax = closureExpr
+            typeLabel = "\(closureExpr.syntaxNodeType)"
+            names = []
+        }
+
+        return LexicalLookupResultDisplay(
+            headerLabel: "\(resultKindLabel):\(typeLabel)",
+            headerRange: headerSyntax.trimmedRange,
+            headerRangeDescription: headerSyntax.sourceRange(converter: converter).description,
+            names: names.map { $0.toDisplay(converter: converter) }
+        )
+    }
+}
+
+private extension SwiftLexicalLookup.LookupName {
+    func toDisplay(converter: SourceLocationConverter) -> LexicalLookupNameDisplay {
+        switch self {
+        case .equivalentNames(let names):
+            return .equivalentNames(names.map { $0.toDisplay(converter: converter) })
+        case .identifier(let syntax, let accessibleAfter):
+            let accessibleAfterDescription: String? = accessibleAfter.map { position in
+                let location = converter.location(for: position)
+                return "[\(location.line):\(location.column)]"
+            }
+            return .leaf(
+                label: displayDescription,
+                range: syntax.trimmedRange,
+                rangeDescription: syntax.sourceRange(converter: converter).description,
+                accessibleAfterDescription: accessibleAfterDescription
+            )
+        case .declaration(let syntax):
+            return .leaf(
+                label: displayDescription,
+                range: syntax.trimmedRange,
+                rangeDescription: syntax.sourceRange(converter: converter).description,
+                accessibleAfterDescription: nil
+            )
+        case .implicit(let decl):
+            return .leaf(
+                label: displayDescription,
+                range: decl.syntax.trimmedRange,
+                rangeDescription: decl.syntax.sourceRange(converter: converter).description,
+                accessibleAfterDescription: nil
+            )
+        }
+    }
+}
+
+private extension SwiftSyntaxScope.LookupName {
+    func toDisplay(converter: SourceLocationConverter) -> SyntaxScopeNameDisplay {
+        SyntaxScopeNameDisplay(
+            label: "\(kind):\(text)",
+            range: syntax.trimmedRange,
+            rangeDescription: syntax.sourceRange(converter: converter).description
         )
     }
 }
