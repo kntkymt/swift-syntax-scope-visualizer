@@ -194,7 +194,9 @@ public struct SwiftCodeEditor: Component {
                         .scroll(onScroll)
                         .keydown(onKeyDown)
                         .click(onClick)
-                )
+                ) {
+                    text
+                }
             }
         }
     }
