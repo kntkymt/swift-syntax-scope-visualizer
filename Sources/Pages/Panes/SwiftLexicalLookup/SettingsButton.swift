@@ -19,20 +19,30 @@ struct SettingsButton: Component {
             if isPopoverOpen {
                 Popover {
                     CheckBoxRow(
-                        text: "Hide Empty Collections",
-                        checked: config.hideEmptyCollections,
-                        onToggle: Function { config.hideEmptyCollections.toggle() }
-                    )
-                    CheckBoxRow(
-                        text: "Hide Tokens",
-                        checked: config.hideTokens,
-                        onToggle: Function { config.hideTokens.toggle() }
-                    )
-                    CheckBoxRow(
                         text: "Hide Non-Scope",
                         checked: config.hideNonScope,
                         onToggle: Function { config.hideNonScope.toggle() }
                     )
+                    div(
+                        style: .init()
+                            .display("flex")
+                            .flexDirection("column")
+                            .gap("6px")
+                            .paddingLeft("18px")
+                    ) {
+                        CheckBoxRow(
+                            text: "Hide Empty Collections",
+                            checked: config.hideEmptyCollections,
+                            disabled: config.hideNonScope,
+                            onToggle: Function { config.hideEmptyCollections.toggle() }
+                        )
+                        CheckBoxRow(
+                            text: "Hide Tokens",
+                            checked: config.hideTokens,
+                            disabled: config.hideNonScope,
+                            onToggle: Function { config.hideTokens.toggle() }
+                        )
+                    }
                 }
             }
         }

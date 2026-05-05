@@ -4,28 +4,34 @@ internal struct CheckBoxRow: Component {
     internal init(
         text: String,
         checked: Bool,
+        disabled: Bool = false,
         onToggle: Function<Void>
     ) {
         self.text = text
         self.checked = checked
+        self.disabled = disabled
         self.onToggle = onToggle
     }
 
     private var text: String
     private var checked: Bool
+    private var disabled: Bool
     private var onToggle: Function<Void>
 
     var key: AnyHashable? { text }
 
     var deps: Deps? {
-        [text, checked, onToggle]
+        [text, checked, disabled, onToggle]
     }
 
     func render() -> Node {
-        let attributes: Attributes =
-            checked
-            ? Attributes(["type": "checkbox", "checked": ""])
-            : Attributes(["type": "checkbox"])
+        var attributes: Attributes = .init().type("checkbox")
+        if checked {
+            attributes = attributes.checked("")
+        }
+        if disabled {
+            attributes = attributes.disabled("")
+        }
 
         return label(
             style: .init()
@@ -33,8 +39,9 @@ internal struct CheckBoxRow: Component {
                 .flexDirection("row")
                 .alignItems("center")
                 .gap("6px")
-                .cursor("pointer")
+                .cursor(disabled ? "not-allowed" : "pointer")
                 .userSelect("none")
+                .opacity(disabled ? "0.5" : "1")
         ) {
             input(
                 attributes: attributes,
