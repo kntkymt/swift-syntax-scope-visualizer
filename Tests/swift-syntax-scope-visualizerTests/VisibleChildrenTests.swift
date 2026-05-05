@@ -9,7 +9,7 @@ import SwiftSyntax
         let structDecl = find(in: Syntax(syntax), typeName: "StructDeclSyntax")!
 
         let visible = structDecl.visibleChildren(
-            config: LexicalLookupConfig(
+            config: SwiftLexicalLookupPane.VisibleNodeConfig(
                 hideEmptyCollections: true,
                 hideTokens: false,
                 hideNonScope: false
@@ -25,7 +25,7 @@ import SwiftSyntax
         let structDecl = find(in: Syntax(syntax), typeName: "StructDeclSyntax")!
 
         let visible = structDecl.visibleChildren(
-            config: LexicalLookupConfig(
+            config: SwiftLexicalLookupPane.VisibleNodeConfig(
                 hideEmptyCollections: false,
                 hideTokens: false,
                 hideNonScope: false
@@ -41,7 +41,7 @@ import SwiftSyntax
         let structDecl = find(in: Syntax(syntax), typeName: "StructDeclSyntax")!
 
         let visible = structDecl.visibleChildren(
-            config: LexicalLookupConfig(
+            config: SwiftLexicalLookupPane.VisibleNodeConfig(
                 hideEmptyCollections: false,
                 hideTokens: true,
                 hideNonScope: false
@@ -56,7 +56,7 @@ import SwiftSyntax
         let structDecl = find(in: Syntax(syntax), typeName: "StructDeclSyntax")!
 
         let visible = structDecl.visibleChildren(
-            config: LexicalLookupConfig(
+            config: SwiftLexicalLookupPane.VisibleNodeConfig(
                 hideEmptyCollections: false,
                 hideTokens: false,
                 hideNonScope: false
@@ -72,7 +72,7 @@ import SwiftSyntax
         // SourceFile (Scope) の直接の子は CodeBlockItemList (Non-Scope) と eofToken。
         // hideNonScope を立てると CodeBlockItemList は子の StructDecl (Scope) に置き換わる。
         let visible = Syntax(syntax).visibleChildren(
-            config: LexicalLookupConfig(
+            config: SwiftLexicalLookupPane.VisibleNodeConfig(
                 hideEmptyCollections: false,
                 hideTokens: true,
                 hideNonScope: true
@@ -87,7 +87,7 @@ import SwiftSyntax
         let syntax = Parser.parse(source: "struct Foo {}")
 
         let visible = Syntax(syntax).visibleChildren(
-            config: LexicalLookupConfig(
+            config: SwiftLexicalLookupPane.VisibleNodeConfig(
                 hideEmptyCollections: false,
                 hideTokens: true,
                 hideNonScope: false
@@ -109,7 +109,7 @@ import SwiftSyntax
         // SourceFile から見て CodeBlockItemList(Non-Scope) -> CodeBlockItem(Non-Scope)
         // -> FunctionDecl(Scope) と辿る。3フラグ全有効で FunctionDecl が直下に持ち上がる。
         let visible = Syntax(syntax).visibleChildren(
-            config: LexicalLookupConfig(
+            config: SwiftLexicalLookupPane.VisibleNodeConfig(
                 hideEmptyCollections: true,
                 hideTokens: true,
                 hideNonScope: true
