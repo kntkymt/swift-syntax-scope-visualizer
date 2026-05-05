@@ -55,6 +55,32 @@ let package = Package(
                 .product(name: "SwiftParser", package: "swift-syntax"),
             ]
         ),
+        .binaryTarget(
+            name: "LicensePlistBinary",
+            url:
+                "https://github.com/mono0926/LicensePlist/releases/download/3.27.7/LicensePlistBinary-macos.artifactbundle.zip",
+            checksum: "cfc763c02bc79f0539d4201098782116d1d6cc9911da9d2fafd6925cbc19880a"
+        ),
+        .plugin(
+            name: "GenerateLicenseList",
+            capability: .command(
+                intent: .custom(
+                    verb: "generate-license-list",
+                    description:
+                        "Generate Sources/Pages/Generated/LicensesContent.swift via LicensePlist"
+                ),
+                permissions: [
+                    .writeToPackageDirectory(
+                        reason: "Write Sources/Pages/Generated/LicensesContent.swift"
+                    ),
+                    .allowNetworkConnections(
+                        scope: .all(ports: []),
+                        reason: "Fetch OSS licenses from GitHub API"
+                    ),
+                ]
+            ),
+            dependencies: ["LicensePlistBinary"]
+        ),
     ],
     swiftLanguageModes: [.v6]
 )

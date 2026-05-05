@@ -1,0 +1,8 @@
+options:
+  singlePage: true
+  suppressOpeningDirectory: true
+
+github:
+  - owner: mono0926
+    name: LicensePlist
+    version: 3.27.7

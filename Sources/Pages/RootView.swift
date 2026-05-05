@@ -28,6 +28,7 @@ public struct RootView: Component {
     @BindableState var sourceCode: String = Constant.initialSourceCode
     @BindableState var highlightedSourceCodeRange: Range<AbsolutePosition>? = nil
     @BindableState var lookupConfig: LookupConfig = .default
+    @BindableState var showLicenses: Bool = false
 
     @ParseSourceHook var parsed: ParsedSource?
     @LookupHook var lookupResult: LookupResultData?
@@ -45,49 +46,57 @@ public struct RootView: Component {
                 .height("100vh")
                 .overflow("hidden")
         ) {
-            Pane(
-                header: {
+            if showLicenses {
+                LicensesPane(showLicenses: $showLicenses)
+            } else {
+                Pane(
+                    header: {
+                        div(
+                            style: .init()
+                                .display("flex")
+                                .flexDirection("row")
+                                .alignItems("center")
+                                .gap("8px")
+                        ) {
+                            h4(style: .init().margin("0")) { "Swift Syntax Scope Visualizer" }
+
+                            Button(href: Constant.githubURL) {
+                                "GitHub"
+                            }
+
+                            Button(onClick: Function { showLicenses = true }) {
+                                "Licenses"
+                            }
+                        }
+                    },
+                    border: [],
+                    scrollable: false
+                ) {
                     div(
                         style: .init()
                             .display("flex")
                             .flexDirection("row")
-                            .alignItems("center")
-                            .gap("8px")
+                            .height("100%")
                     ) {
-                        h4(style: .init().margin("0")) { "Swift Syntax Scope Visualizer" }
-
-                        Button(href: Constant.githubURL) {
-                            "GitHub"
-                        }
+                        SwiftCodeEditorPane(
+                            sourceCode: $sourceCode,
+                            lookupConfig: $lookupConfig,
+                            highlightedSourceCodeRange: $highlightedSourceCodeRange,
+                            lookupResult: lookupResult,
+                            onLookup: $lookupResult.onLookup,
+                            onLookupClose: $lookupResult.onLookupClose
+                        )
+                        SwiftLexicalLookupPane(
+                            syntax: parsed?.syntax,
+                            highlightedSyntaxIds: lookupResult?.lexicalLookupOriginSyntaxIds ?? [],
+                            onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
+                        )
+                        SwiftSyntaxScopePane(
+                            scope: parsed?.scope,
+                            highlightedScopeIds: lookupResult?.syntaxScopeOriginScopeIds ?? [],
+                            onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
+                        )
                     }
-                },
-                border: [],
-                scrollable: false
-            ) {
-                div(
-                    style: .init()
-                        .display("flex")
-                        .flexDirection("row")
-                        .height("100%")
-                ) {
-                    SwiftCodeEditorPane(
-                        sourceCode: $sourceCode,
-                        lookupConfig: $lookupConfig,
-                        highlightedSourceCodeRange: $highlightedSourceCodeRange,
-                        lookupResult: lookupResult,
-                        onLookup: $lookupResult.onLookup,
-                        onLookupClose: $lookupResult.onLookupClose
-                    )
-                    SwiftLexicalLookupPane(
-                        syntax: parsed?.syntax,
-                        highlightedSyntaxIds: lookupResult?.lexicalLookupOriginSyntaxIds ?? [],
-                        onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
-                    )
-                    SwiftSyntaxScopePane(
-                        scope: parsed?.scope,
-                        highlightedScopeIds: lookupResult?.syntaxScopeOriginScopeIds ?? [],
-                        onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
-                    )
                 }
             }
         }
