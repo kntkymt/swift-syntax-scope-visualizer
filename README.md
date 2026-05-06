@@ -1,7 +1,9 @@
-# swift-syntax-scope-visualizer
+# Swift Syntax Scope Visualizer
 
-SwiftSyntax, SwiftLexicalLookup, SwiftSyntaxScopeのTreeをビジュアライズ化するWebアプリ。
+A web app that visualizes scope systems of Swift: [SwiftLexicalLookup](https://github.com/swiftlang/swift-syntax/tree/main/Sources/SwiftLexicalLookup) and [SwiftSyntaxScope](https://github.com/kntkymt/swift-syntax-scope) (a port of the Swift compiler's [ASTScope](https://github.com/swiftlang/swift/blob/main/lib/AST/ASTScope.cpp) to Swift Syntax).
 
-Swift for WASMを用いてフロントエンドもSwiftで記述
+The frontend is written in Swift using Swift for WASM.
 
-フロントエンドライブラリとしてswift-reactを利用
+Uses [swift-react](https://github.com/omochi/swift-react) as the frontend library.
+
+![](resources/screenshot.png)
