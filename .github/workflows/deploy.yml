@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      SWIFT_VERSION: swift-6.3.1
+      WASM_SDK_CHECKSUM: bd47baa20771f366d8beed7970afaa30742b2210097afd15f85427226d8f4cf2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Swift wasm SDK
+        run: |
+          swift sdk install \
+            https://download.swift.org/${SWIFT_VERSION}-release/wasm-sdk/${SWIFT_VERSION}-RELEASE/${SWIFT_VERSION}-RELEASE_wasm.artifactbundle.tar.gz \
+            --checksum ${WASM_SDK_CHECKSUM}
+
+      - name: Build
+        env:
+          WASM_SDK: ${{ env.SWIFT_VERSION }}-RELEASE_wasm
+        run: make build-web
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
