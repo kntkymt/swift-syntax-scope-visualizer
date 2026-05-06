@@ -52,12 +52,4 @@ struct ParsedSource: Hashable {
         self.syntax = syntax
         self.scope = scope
     }
-
-    public static func == (a: Self, b: Self) -> Bool {
-        a.sourceCode == b.sourceCode
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(sourceCode)
-    }
 }
