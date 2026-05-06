@@ -9,7 +9,7 @@ internal struct SwiftSyntaxScopePane: Component {
 
     var deps: Deps? {
         [
-            scope.map { ObjectIdentifier($0) },
+            scope?.id,
             highlights,
             onUpdateHighlightedSourceCodeRange,
         ]
@@ -34,7 +34,7 @@ internal struct SwiftSyntaxScopePane: Component {
 }
 
 private struct ScopeTreeNodeView: Component {
-    var key: AnyHashable? { ObjectIdentifier(scope) }
+    var key: AnyHashable? { scope.id }
 
     let scope: any SyntaxScopeProtocol
     let highlights: TreeNodeHighlights<ObjectIdentifier>
@@ -44,21 +44,21 @@ private struct ScopeTreeNodeView: Component {
 
     var deps: Deps? {
         [
-            ObjectIdentifier(scope),
+            scope.id,
             highlights,
             onUpdateHighlightedSourceCodeRange,
         ]
     }
 
     func render() -> Node {
-        $onHoverChange(deps: [ObjectIdentifier(scope), onUpdateHighlightedSourceCodeRange]) {
+        $onHoverChange(deps: [scope.id, onUpdateHighlightedSourceCodeRange]) {
             (isHovered) in
             onUpdateHighlightedSourceCodeRange(isHovered ? scope.range : nil)
         }
 
         return HoverHighlight(onHoverChange: onHoverChange) {
             Accordion(
-                headerBackgroundColor: highlights.color(for: ObjectIdentifier(scope))
+                headerBackgroundColor: highlights.color(for: scope.id)
                     ?? "transparent"
             ) {
                 ScopeTreeNodeRowView(scope: scope)
@@ -82,11 +82,12 @@ private struct ScopeTreeNodeRowView: Component {
     let scope: any SyntaxScopeProtocol
 
     var deps: Deps? {
-        [ObjectIdentifier(scope)]
+        [scope.id]
     }
 
     func render() -> Node {
-        let names = scope.introducedLookupNames
+        let localNames = scope.introducedLocalLookupNames
+        let memberNames = scope.introducedMemberLookupNames
 
         return Fragment {
             span(style: .init().color(Color.red)) {
@@ -111,13 +112,23 @@ private struct ScopeTreeNodeRowView: Component {
                 scope.rangeDescription
             }
 
-            if !names.isEmpty {
+            if !localNames.isEmpty {
                 span(
                     style: .init()
                         .marginLeft("8px")
                         .color(Color.secondary)
                 ) {
-                    "introduces=[\(names.map { "\($0.kind):\($0.text)" }.joined(separator: ", "))]"
+                    "introduces=[\(localNames.map { "\($0.kind):\($0.text)" }.joined(separator: ", "))]"
+                }
+            }
+
+            if !memberNames.isEmpty {
+                span(
+                    style: .init()
+                        .marginLeft("8px")
+                        .color(Color.secondary)
+                ) {
+                    "introducesMembers=[\(memberNames.map { "\($0.kind):\($0.text)" }.joined(separator: ", "))]"
                 }
             }
         }

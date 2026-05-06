@@ -1,5 +1,5 @@
 {
-  "originHash" : "df0509c10f53f3ddd39422e4de1473de84b007bfbe31fb53c924b909ecd7b0b3",
+  "originHash" : "4e446f82ca5adfde7688a452a72de8a7afb68168a202c17296868657d639b333",
   "pins" : [
     {
       "identity" : "javascriptkit",
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kntkymt/swift-syntax-scope.git",
       "state" : {
-        "revision" : "e72c67786c103f6b7bf4a2b47d64f93aaba2a77e",
-        "version" : "0.0.5"
+        "branch" : "main",
+        "revision" : "2b2f6e9015056f3e75bd4d4f208a3a3a66242d51"
       }
     }
   ],
