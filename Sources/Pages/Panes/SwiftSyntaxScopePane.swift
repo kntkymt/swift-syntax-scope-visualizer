@@ -1,4 +1,5 @@
 import React
+import SwiftReactPlus
 import SwiftSyntax
 import SwiftSyntaxScope
 
@@ -7,6 +8,8 @@ internal struct SwiftSyntaxScopePane: Component {
     let converter: SourceLocationConverter?
     let highlights: TreeNodeHighlights<ObjectIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
+
+    @BindableState var isCollapsed: Bool = true
 
     var deps: Deps? {
         [
@@ -18,9 +21,29 @@ internal struct SwiftSyntaxScopePane: Component {
     }
 
     func render() -> Node {
-        Pane(
-            title: "Swift Syntax Scope (referencing swift compiler)",
-            border: [],
+        if isCollapsed {
+            return CollapsedSwiftSyntaxScopePane(isCollapsed: $isCollapsed)
+        }
+
+        return Pane(
+            header: {
+                div(
+                    style: .init()
+                        .display("flex")
+                        .flexDirection("row")
+                        .alignItems("center")
+                        .gap("8px")
+                ) {
+                    Button(onClick: Function { isCollapsed = true }) {
+                        "→"
+                    }
+
+                    h4(style: .init().margin("0")) {
+                        "Swift Syntax Scope (referencing swift compiler)"
+                    }
+                }
+            },
+            border: []
         ) {
             if let scope, let converter {
                 div(style: .init().whiteSpace("nowrap")) {
@@ -30,6 +53,60 @@ internal struct SwiftSyntaxScopePane: Component {
                         highlights: highlights,
                         onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
                     )
+                }
+            }
+        }
+    }
+}
+
+private struct CollapsedSwiftSyntaxScopePane: Component {
+    @Binding var isCollapsed: Bool
+
+    var deps: Deps? {
+        [_isCollapsed]
+    }
+
+    func render() -> Node {
+        div(
+            style: .init()
+                .flex("0 0 auto")
+                .width("44px")
+                .height("100%")
+                .display("flex")
+                .flexDirection("column")
+                .boxSizing("border-box")
+                .fontFamily("system-ui, -apple-system, BlinkMacSystemFont, sans-serif")
+        ) {
+            div(
+                style: .init()
+                    .height("44px")
+                    .flexShrink("0")
+                    .boxSizing("border-box")
+                    .borderBottom("1px solid #ddd")
+                    .backgroundColor("#f5f5f5")
+                    .display("flex")
+                    .alignItems("center")
+                    .justifyContent("center")
+            ) {
+                Button(onClick: Function { isCollapsed = false }) {
+                    "←"
+                }
+            }
+
+            div(
+                style: .init()
+                    .flex("1 1 0")
+                    .display("flex")
+                    .alignItems("center")
+                    .justifyContent("center")
+                    .padding("8px 0")
+            ) {
+                span(
+                    style: .init()
+                        .writingMode("vertical-rl")
+                        .whiteSpace("nowrap")
+                ) {
+                    "Swift Syntax Scope"
                 }
             }
         }
