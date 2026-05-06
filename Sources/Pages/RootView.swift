@@ -27,17 +27,42 @@ enum Constant {
 public struct RootView: Component {
     @BindableState var sourceCode: String = Constant.initialSourceCode
     @BindableState var highlightedSourceCodeRange: Range<AbsolutePosition>? = nil
+    @BindableState var hoveredLookupSyntaxIds: Set<SyntaxIdentifier> = []
+    @BindableState var hoveredLookupScopeIds: Set<ObjectIdentifier> = []
     @BindableState var lookupConfig: LookupConfig = .default
     @BindableState var showLicenses: Bool = false
 
     @ParseSourceHook var parsed: ParsedSource?
     @LookupHook var lookupResult: LookupResultData?
 
+    @Callback var onLookupClose: Function<Void>
+
     public init() {}
 
     public func render() -> Node {
         $parsed(sourceCode: sourceCode)
         $lookupResult(scope: parsed?.scope, config: lookupConfig)
+
+        $onLookupClose(deps: [$lookupResult.onLookupClose]) {
+            $lookupResult.onLookupClose()
+            hoveredLookupSyntaxIds = []
+            hoveredLookupScopeIds = []
+        }
+
+        let lexicalLookupHighlights = TreeNodeHighlights<SyntaxIdentifier>([
+            .init(ids: hoveredLookupSyntaxIds, color: Color.lookupHoverHighlight),
+            .init(
+                ids: lookupResult?.lexicalLookupOriginSyntaxIds ?? [],
+                color: Color.lookupOriginHighlight
+            ),
+        ])
+        let syntaxScopeHighlights = TreeNodeHighlights<ObjectIdentifier>([
+            .init(ids: hoveredLookupScopeIds, color: Color.lookupHoverHighlight),
+            .init(
+                ids: lookupResult?.syntaxScopeOriginScopeIds ?? [],
+                color: Color.lookupOriginHighlight
+            ),
+        ])
 
         return div(
             style: .init()
@@ -84,16 +109,18 @@ public struct RootView: Component {
                             highlightedSourceCodeRange: $highlightedSourceCodeRange,
                             lookupResult: lookupResult,
                             onLookup: $lookupResult.onLookup,
-                            onLookupClose: $lookupResult.onLookupClose
+                            onLookupClose: onLookupClose,
+                            onUpdateHoveredSyntaxIds: $hoveredLookupSyntaxIds.setValue,
+                            onUpdateHoveredScopeIds: $hoveredLookupScopeIds.setValue
                         )
                         SwiftLexicalLookupPane(
                             syntax: parsed?.syntax,
-                            highlightedSyntaxIds: lookupResult?.lexicalLookupOriginSyntaxIds ?? [],
+                            highlights: lexicalLookupHighlights,
                             onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
                         )
                         SwiftSyntaxScopePane(
                             scope: parsed?.scope,
-                            highlightedScopeIds: lookupResult?.syntaxScopeOriginScopeIds ?? [],
+                            highlights: syntaxScopeHighlights,
                             onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
                         )
                     }

@@ -5,7 +5,7 @@ import SwiftReactPlus
 
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: (any SyntaxProtocol)?
-    let highlightedSyntaxIds: Set<SyntaxIdentifier>
+    let highlights: TreeNodeHighlights<SyntaxIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
     @BindableState var config: VisibleNodeConfig = .default
@@ -13,7 +13,7 @@ internal struct SwiftLexicalLookupPane: Component {
     var deps: Deps? {
         [
             syntax?.id,
-            highlightedSyntaxIds,
+            highlights,
             onUpdateHighlightedSourceCodeRange,
         ]
     }
@@ -35,7 +35,7 @@ internal struct SwiftLexicalLookupPane: Component {
                         node: syntax,
                         converter: converter,
                         config: config,
-                        highlightedSyntaxIds: highlightedSyntaxIds,
+                        highlights: highlights,
                         onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
                     )
                 }
@@ -50,9 +50,8 @@ private struct SyntaxTreeNodeView: Component {
     var deps: Deps? {
         [
             node.id,
-            ObjectIdentifier(converter),
             config,
-            highlightedSyntaxIds,
+            highlights,
             onUpdateHighlightedSourceCodeRange,
         ]
     }
@@ -60,94 +59,105 @@ private struct SyntaxTreeNodeView: Component {
     let node: any SyntaxProtocol
     let converter: SourceLocationConverter
     let config: SwiftLexicalLookupPane.VisibleNodeConfig
-    let highlightedSyntaxIds: Set<SyntaxIdentifier>
+    let highlights: TreeNodeHighlights<SyntaxIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
     @Callback var onHoverChange: Function<Void, Bool>
 
     func render() -> Node {
-        // Avoid declaring `scopeDebugName` on `SyntaxProtocol`: it shadows the
-        // `ScopeSyntax` requirement of the same name and recurses infinitely.
-        let scope = Syntax(node).asProtocol(SyntaxProtocol.self) as? ScopeSyntax
-        let typeColor = node.isScope ? Color.red : Color.blue
-        let introducedNames = node.introducedNames
-        let introducedNamesToParent = node.introducedNamesToParent
-        let declNames = node.declNames
-        let isLookupOrigin = highlightedSyntaxIds.contains(node.id)
-
         $onHoverChange(deps: [node.id, onUpdateHighlightedSourceCodeRange]) { (isHovered) in
             onUpdateHighlightedSourceCodeRange(isHovered ? node.trimmedRange : nil)
         }
 
         return HoverHighlight(onHoverChange: onHoverChange) {
             Accordion(
-                headerBackgroundColor:
-                    isLookupOrigin ? Color.lookupOriginHighlight : "transparent"
+                headerBackgroundColor: highlights.color(for: node.id) ?? "transparent"
             ) {
-                span(style: .init().color(typeColor)) {
-                    if let scopeDebugName = scope?.scopeDebugName {
-                        "\(node.typeName): \(scopeDebugName)"
-                    } else {
-                        node.typeName
-                    }
-                }
-
-                if let token = node.as(TokenSyntax.self) {
-                    span(
-                        style: .init()
-                            .marginLeft("4px")
-                            .color(Color.secondary)
-                    ) {
-                        token.tokenKind == .endOfFile ? ".eof" : "\"\(token.text)\""
-                    }
-                }
-
-                if !declNames.isEmpty {
-                    span(
-                        style: .init()
-                            .marginLeft("8px")
-                            .color(Color.secondary)
-                    ) {
-                        declNames.lazy.map { "\"\($0)\"" }.joined(separator: ", ")
-                    }
-                }
-
-                span(
-                    style: .init()
-                        .marginLeft("8px")
-                        .color(Color.secondary)
-                ) {
-                    node.sourceRange(converter: converter).description
-                }
-
-                if !introducedNames.isEmpty {
-                    span(
-                        style: .init()
-                            .marginLeft("8px")
-                            .color(Color.secondary)
-                    ) {
-                        "introduces=[\(introducedNames.joined(separator: ", "))]"
-                    }
-                }
-
-                if !introducedNamesToParent.isEmpty {
-                    span(
-                        style: .init()
-                            .marginLeft("8px")
-                            .color(Color.secondary)
-                    ) {
-                        "introducesToParent=[\(introducedNamesToParent.joined(separator: ", "))]"
-                    }
-                }
+                SyntaxTreeNodeRowView(node: node, converter: converter)
             } body: {
                 node.visibleChildren(config: config).map { (child) in
                     SyntaxTreeNodeView(
                         node: child,
                         converter: converter,
                         config: config,
-                        highlightedSyntaxIds: highlightedSyntaxIds,
+                        highlights: highlights,
                         onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
                     )
+                }
+            }
+        }
+    }
+}
+
+private struct SyntaxTreeNodeRowView: Component {
+    let node: any SyntaxProtocol
+    let converter: SourceLocationConverter
+
+    var deps: Deps? {
+        [node.id]
+    }
+
+    func render() -> Node {
+        let scope = Syntax(node).asProtocol(SyntaxProtocol.self) as? ScopeSyntax
+        let typeColor = node.isScope ? Color.red : Color.blue
+        let introducedNames = node.introducedNames
+        let introducedNamesToParent = node.introducedNamesToParent
+        let declNames = node.declNames
+
+        return Fragment {
+            span(style: .init().color(typeColor)) {
+                if let scopeDebugName = scope?.scopeDebugName {
+                    "\(node.typeName): \(scopeDebugName)"
+                } else {
+                    node.typeName
+                }
+            }
+
+            if let token = node.as(TokenSyntax.self) {
+                span(
+                    style: .init()
+                        .marginLeft("4px")
+                        .color(Color.secondary)
+                ) {
+                    token.tokenKind == .endOfFile ? ".eof" : "\"\(token.text)\""
+                }
+            }
+
+            if !declNames.isEmpty {
+                span(
+                    style: .init()
+                        .marginLeft("8px")
+                        .color(Color.secondary)
+                ) {
+                    declNames.lazy.map { "\"\($0)\"" }.joined(separator: ", ")
+                }
+            }
+
+            span(
+                style: .init()
+                    .marginLeft("8px")
+                    .color(Color.secondary)
+            ) {
+                node.sourceRange(converter: converter).description
+            }
+
+            if !introducedNames.isEmpty {
+                span(
+                    style: .init()
+                        .marginLeft("8px")
+                        .color(Color.secondary)
+                ) {
+                    "introduces=[\(introducedNames.joined(separator: ", "))]"
+                }
+            }
+
+            if !introducedNamesToParent.isEmpty {
+                span(
+                    style: .init()
+                        .marginLeft("8px")
+                        .color(Color.secondary)
+                ) {
+                    "introducesToParent=[\(introducedNamesToParent.joined(separator: ", "))]"
                 }
             }
         }

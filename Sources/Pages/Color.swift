@@ -4,4 +4,5 @@ internal enum Color {
     static let secondary = "#666"
     static let buttonActiveBackground = "#a8c8ff"
     static let lookupOriginHighlight = "rgba(255, 193, 7, 0.5)"
+    static let lookupHoverHighlight = "rgba(33, 150, 243, 0.5)"
 }

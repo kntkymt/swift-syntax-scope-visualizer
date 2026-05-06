@@ -43,6 +43,7 @@ internal struct LookupResultData: Hashable {
 
 internal struct LexicalLookupResultDisplay: Hashable {
     var headerLabel: String
+    var headerSyntaxId: SyntaxIdentifier
     var headerRange: Range<AbsolutePosition>
     var headerRangeDescription: String
     var names: [LexicalLookupNameDisplay]
@@ -51,6 +52,7 @@ internal struct LexicalLookupResultDisplay: Hashable {
 internal indirect enum LexicalLookupNameDisplay: Hashable {
     case leaf(
         label: String,
+        syntaxId: SyntaxIdentifier,
         range: Range<AbsolutePosition>,
         rangeDescription: String,
         accessibleAfterDescription: String?
@@ -60,6 +62,7 @@ internal indirect enum LexicalLookupNameDisplay: Hashable {
 
 internal struct SyntaxScopeNameDisplay: Hashable {
     var label: String
+    var scopeId: ObjectIdentifier?
     var range: Range<AbsolutePosition>
     var rangeDescription: String
 }
@@ -86,12 +89,13 @@ private extension SourceFileScope {
             (originToken?.lookup(identifier, with: lexicalConfig) ?? [])
             .map { $0.toDisplay(converter: converter) }
 
+        let originScopeMap = self.findOriginScopeMap(at: position)
         let syntaxScopeNames = self.lexicalLookup(
             position: position,
             name: identifier,
             options: options
         )
-        .map { $0.toDisplay(converter: converter) }
+        .map { $0.toDisplay(converter: converter, originScopeMap: originScopeMap) }
 
         let lexicalLookupOriginSyntaxIds: Set<SyntaxIdentifier> = {
             guard let token = originToken else { return [] }
@@ -123,6 +127,27 @@ private extension SourceFileScope {
             lexicalLookupOriginSyntaxIds: lexicalLookupOriginSyntaxIds,
             syntaxScopeOriginScopeIds: syntaxScopeOriginScopeIds
         )
+    }
+
+    // Walk the lookup-parent chain so each introduced name is mapped back to
+    // the innermost scope that contributed it. Generic parameter names are
+    // skipped because GenericParametersInfo.names is not exposed publicly.
+    func findOriginScopeMap(at position: AbsolutePosition)
+        -> [SyntaxIdentifier: ObjectIdentifier]
+    {
+        var result: [SyntaxIdentifier: ObjectIdentifier] = [:]
+        var current: (any SyntaxScopeProtocol)? = findStartingScopeForLookup(position: position)
+        while let scope = current {
+            let scopeId = ObjectIdentifier(scope)
+            for name in scope.introducedLookupNames {
+                let key = name.syntax.id
+                if result[key] == nil {
+                    result[key] = scopeId
+                }
+            }
+            current = scope.lookupParent
+        }
+        return result
     }
 }
 
@@ -159,6 +184,7 @@ private extension SwiftLexicalLookup.LookupResult {
 
         return LexicalLookupResultDisplay(
             headerLabel: "\(resultKindLabel):\(typeLabel)",
+            headerSyntaxId: headerSyntax.id,
             headerRange: headerSyntax.trimmedRange,
             headerRangeDescription: headerSyntax.sourceRange(converter: converter).description,
             names: names.map { $0.toDisplay(converter: converter) }
@@ -178,6 +204,7 @@ private extension SwiftLexicalLookup.LookupName {
             }
             return .leaf(
                 label: displayDescription,
+                syntaxId: syntax.id,
                 range: syntax.trimmedRange,
                 rangeDescription: syntax.sourceRange(converter: converter).description,
                 accessibleAfterDescription: accessibleAfterDescription
@@ -185,6 +212,7 @@ private extension SwiftLexicalLookup.LookupName {
         case .declaration(let syntax):
             return .leaf(
                 label: displayDescription,
+                syntaxId: syntax.id,
                 range: syntax.trimmedRange,
                 rangeDescription: syntax.sourceRange(converter: converter).description,
                 accessibleAfterDescription: nil
@@ -192,6 +220,7 @@ private extension SwiftLexicalLookup.LookupName {
         case .implicit(let decl):
             return .leaf(
                 label: displayDescription,
+                syntaxId: decl.syntax.id,
                 range: decl.syntax.trimmedRange,
                 rangeDescription: decl.syntax.sourceRange(converter: converter).description,
                 accessibleAfterDescription: nil
@@ -201,9 +230,13 @@ private extension SwiftLexicalLookup.LookupName {
 }
 
 private extension SwiftSyntaxScope.LookupName {
-    func toDisplay(converter: SourceLocationConverter) -> SyntaxScopeNameDisplay {
+    func toDisplay(
+        converter: SourceLocationConverter,
+        originScopeMap: [SyntaxIdentifier: ObjectIdentifier]
+    ) -> SyntaxScopeNameDisplay {
         SyntaxScopeNameDisplay(
             label: "\(kind):\(text)",
+            scopeId: originScopeMap[syntax.id],
             range: syntax.trimmedRange,
             rangeDescription: syntax.sourceRange(converter: converter).description
         )

@@ -11,6 +11,8 @@ internal struct SwiftCodeEditorPane: Component {
     let lookupResult: LookupResultData?
     let onLookup: Function<Void, ClickPointInfo>
     let onLookupClose: Function<Void>
+    let onUpdateHoveredSyntaxIds: Function<Void, Set<SyntaxIdentifier>>
+    let onUpdateHoveredScopeIds: Function<Void, Set<ObjectIdentifier>>
 
     @State var isLookupMode: Bool = false
     @Callback var onLookupClick: Function<Void, ClickPointInfo>
@@ -23,6 +25,8 @@ internal struct SwiftCodeEditorPane: Component {
             lookupResult,
             onLookup,
             onLookupClose,
+            onUpdateHoveredSyntaxIds,
+            onUpdateHoveredScopeIds,
         ]
     }
 
@@ -69,6 +73,8 @@ internal struct SwiftCodeEditorPane: Component {
                 LookupResultPopover(
                     result: lookupResult,
                     onUpdateHighlightedSourceCodeRange: _highlightedSourceCodeRange.setValue,
+                    onUpdateHoveredSyntaxIds: onUpdateHoveredSyntaxIds,
+                    onUpdateHoveredScopeIds: onUpdateHoveredScopeIds,
                     onClose: onLookupClose
                 )
             }
