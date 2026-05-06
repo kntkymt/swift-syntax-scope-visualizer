@@ -11,26 +11,27 @@ internal struct Popover: Component {
     internal init(
         anchor: Anchor = .parentBelowRight,
         scrollable: Bool = false,
-        onDismiss: Function<Void>? = nil,
+        closeAction: Function<Void>? = nil,
         @ChildrenBuilder body: () -> [Node] = { [] }
     ) {
         self.anchor = anchor
         self.scrollable = scrollable
-        self.onDismiss = onDismiss
+        self.closeAction = closeAction
         self.body = body()
     }
 
     private var anchor: Anchor
     private var scrollable: Bool
-    private var onDismiss: Function<Void>?
+    private var closeAction: Function<Void>?
     private var body: [Node]
 
     var deps: Deps? {
-        [anchor, scrollable, onDismiss, body.deps]
+        [anchor, scrollable, closeAction, body.deps]
     }
 
     func render() -> Node {
         var boxStyle: Style = .init()
+            .position("relative")
             .padding("8px 10px")
             .backgroundColor("#fff")
             .border("1px solid #ccc")
@@ -49,45 +50,49 @@ internal struct Popover: Component {
                 .overflow("auto")
         }
 
-        // Stop click propagation inside the box so the dismiss overlay only fires for clicks
-        // outside the popover content.
-        let boxListeners: EventListeners =
-            onDismiss != nil
-            ? .init().click(
-                EventListener { event in
-                    _ = event.jsValue.stopPropagation()
-                }
-            )
-            : .init()
+        // Reserve space at the top-right so the close button doesn't overlap content.
+        if closeAction != nil {
+            boxStyle = boxStyle.paddingRight("28px")
+        }
 
-        let popoverBox = div(style: boxStyle, listeners: boxListeners) { body }
+        let popoverBox = div(style: boxStyle) {
+            if let closeAction {
+                Self.closeButton(onClick: closeAction)
+            }
+            body
+        }
 
         // Place the arrow on the wrapper (not inside the box) so a scrollable box's
         // `overflow: auto` doesn't clip it.
         let wrapperChildren: [Node] =
             anchor.hasArrow ? [Self.arrowNode(), popoverBox] : [popoverBox]
-        let wrapper = div(style: anchor.wrapperStyle.zIndex("1")) { wrapperChildren }
-
-        guard let onDismiss else {
-            return wrapper
-        }
-
-        return div(
-            style: .init()
-                .position("fixed")
-                .top("0")
-                .left("0")
-                .right("0")
-                .bottom("0")
-                .zIndex("10"),
-            listeners: .init().click(EventListener { _ in onDismiss() })
-        ) {
-            wrapper
-        }
+        return div(style: anchor.wrapperStyle.zIndex("1")) { wrapperChildren }
     }
 }
 
 private extension Popover {
+    static func closeButton(onClick: Function<Void>) -> Node {
+        button(
+            attributes: .init().type("button").set("aria-label", to: "Close"),
+            style: .init()
+                .position("absolute")
+                .top("4px")
+                .right("6px")
+                .width("20px")
+                .height("20px")
+                .padding("0")
+                .border("none")
+                .backgroundColor("transparent")
+                .color(Color.secondary)
+                .fontSize("16px")
+                .lineHeight("1")
+                .cursor("pointer"),
+            listeners: .init().click(EventListener { _ in onClick() })
+        ) {
+            "×"
+        }
+    }
+
     static let arrowSize: Double = 16
     static let arrowSideOffset: Double = 12
 

@@ -36,7 +36,7 @@ internal struct LookupResultPopover: Component {
         Popover(
             anchor: .viewport(x: result.anchorPoint.x, y: result.anchorPoint.y),
             scrollable: true,
-            onDismiss: onClose
+            closeAction: onClose
         ) {
             div(style: .init().fontWeight("bold")) {
                 "Lookup Result from \(result.sourceLocationDescription)"
