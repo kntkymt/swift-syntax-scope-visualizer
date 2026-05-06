@@ -6,24 +6,6 @@ import SwiftReactPlus
 import SwiftSyntax
 import SwiftSyntaxScope
 
-enum Constant {
-    static let initialSourceCode = """
-        func f() {
-            let a = 1
-            if let b = value() {
-                let c = 3
-            }
-
-            guard let d = value() else {
-                let e = 4
-            }
-            let f = 5
-        }
-        """
-
-    static let githubURL = "https://github.com/kntkymt/swift-syntax-scope-visualizer"
-}
-
 public struct RootView: Component {
     @BindableState var sourceCode: String = Constant.initialSourceCode
     @BindableState var highlightedSourceCodeRange: Range<AbsolutePosition>? = nil
