@@ -46,10 +46,12 @@ struct ParsedSource: Hashable {
     let sourceCode: String
     let syntax: SourceFileSyntax
     let scope: SourceFileScope
+    let converter: SourceLocationConverter
 
     init(sourceCode: String, syntax: SourceFileSyntax, scope: SourceFileScope) {
         self.sourceCode = sourceCode
         self.syntax = syntax
         self.scope = scope
+        self.converter = SourceLocationConverter(fileName: "", tree: syntax.root)
     }
 }

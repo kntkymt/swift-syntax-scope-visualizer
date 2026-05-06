@@ -5,6 +5,7 @@ import SwiftReactPlus
 
 internal struct SwiftLexicalLookupPane: Component {
     let syntax: (any SyntaxProtocol)?
+    let converter: SourceLocationConverter?
     let highlights: TreeNodeHighlights<SyntaxIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
@@ -13,6 +14,7 @@ internal struct SwiftLexicalLookupPane: Component {
     var deps: Deps? {
         [
             syntax?.id,
+            converter,
             highlights,
             onUpdateHighlightedSourceCodeRange,
         ]
@@ -27,9 +29,7 @@ internal struct SwiftLexicalLookupPane: Component {
             },
             border: .right
         ) {
-            if let syntax {
-                let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
-
+            if let syntax, let converter {
                 div(style: .init().whiteSpace("nowrap")) {
                     SyntaxTreeNodeView(
                         node: syntax,
@@ -50,6 +50,7 @@ private struct SyntaxTreeNodeView: Component {
     var deps: Deps? {
         [
             node.id,
+            converter,
             config,
             highlights,
             onUpdateHighlightedSourceCodeRange,
@@ -94,7 +95,7 @@ private struct SyntaxTreeNodeRowView: Component {
     let converter: SourceLocationConverter
 
     var deps: Deps? {
-        [node.id]
+        [node.id, converter]
     }
 
     func render() -> Node {

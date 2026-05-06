@@ -4,12 +4,14 @@ import SwiftSyntaxScope
 
 internal struct SwiftSyntaxScopePane: Component {
     let scope: SourceFileScope?
+    let converter: SourceLocationConverter?
     let highlights: TreeNodeHighlights<ObjectIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
     var deps: Deps? {
         [
             scope?.id,
+            converter,
             highlights,
             onUpdateHighlightedSourceCodeRange,
         ]
@@ -20,10 +22,11 @@ internal struct SwiftSyntaxScopePane: Component {
             title: "Swift Syntax Scope (referencing swift compiler)",
             border: [],
         ) {
-            if let scope {
+            if let scope, let converter {
                 div(style: .init().whiteSpace("nowrap")) {
                     ScopeTreeNodeView(
                         scope: scope,
+                        converter: converter,
                         highlights: highlights,
                         onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
                     )
@@ -37,6 +40,7 @@ private struct ScopeTreeNodeView: Component {
     var key: AnyHashable? { scope.id }
 
     let scope: any SyntaxScopeProtocol
+    let converter: SourceLocationConverter
     let highlights: TreeNodeHighlights<ObjectIdentifier>
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
@@ -45,6 +49,7 @@ private struct ScopeTreeNodeView: Component {
     var deps: Deps? {
         [
             scope.id,
+            converter,
             highlights,
             onUpdateHighlightedSourceCodeRange,
         ]
@@ -61,11 +66,12 @@ private struct ScopeTreeNodeView: Component {
                 headerBackgroundColor: highlights.color(for: scope.id)
                     ?? "transparent"
             ) {
-                ScopeTreeNodeRowView(scope: scope)
+                ScopeTreeNodeRowView(scope: scope, converter: converter)
             } body: {
                 scope.children.map { (child) in
                     ScopeTreeNodeView(
                         scope: child,
+                        converter: converter,
                         highlights: highlights,
                         onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
                     )
@@ -80,9 +86,10 @@ private struct ScopeTreeNodeView: Component {
 // span content is reused instead of re-rendering.
 private struct ScopeTreeNodeRowView: Component {
     let scope: any SyntaxScopeProtocol
+    let converter: SourceLocationConverter
 
     var deps: Deps? {
-        [scope.id]
+        [scope.id, converter]
     }
 
     func render() -> Node {
@@ -109,7 +116,7 @@ private struct ScopeTreeNodeRowView: Component {
                     .marginLeft("8px")
                     .color(Color.secondary)
             ) {
-                scope.rangeDescription
+                scope.sourceRange(converter: converter).description
             }
 
             if !localNames.isEmpty {
@@ -132,12 +139,5 @@ private struct ScopeTreeNodeRowView: Component {
                 }
             }
         }
-    }
-}
-
-private extension SyntaxScopeProtocol {
-    var rangeDescription: String {
-        let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
-        return sourceRange(converter: converter).description
     }
 }

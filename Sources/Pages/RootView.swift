@@ -41,7 +41,7 @@ public struct RootView: Component {
 
     public func render() -> Node {
         $parsed(sourceCode: sourceCode)
-        $lookupResult(scope: parsed?.scope, config: lookupConfig)
+        $lookupResult(parsed: parsed, config: lookupConfig)
 
         $onLookupClose(deps: [$lookupResult.onLookupClose]) {
             $lookupResult.onLookupClose()
@@ -115,11 +115,13 @@ public struct RootView: Component {
                         )
                         SwiftLexicalLookupPane(
                             syntax: parsed?.syntax,
+                            converter: parsed?.converter,
                             highlights: lexicalLookupHighlights,
                             onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
                         )
                         SwiftSyntaxScopePane(
                             scope: parsed?.scope,
+                            converter: parsed?.converter,
                             highlights: syntaxScopeHighlights,
                             onUpdateHighlightedSourceCodeRange: $highlightedSourceCodeRange.setValue
                         )

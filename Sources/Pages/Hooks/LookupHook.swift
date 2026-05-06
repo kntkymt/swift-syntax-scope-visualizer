@@ -20,10 +20,10 @@ internal struct LookupHook: Hook {
     internal var wrappedValue: LookupResultData? { result }
     internal var projectedValue: Self { self }
 
-    internal func callAsFunction(scope: SourceFileScope?, config: LookupConfig) {
-        $onLookup(deps: [scope?.syntax.id, config]) { (info) in
-            guard let scope else { return }
-            result = scope.makeLookupResult(info: info, config: config)
+    internal func callAsFunction(parsed: ParsedSource?, config: LookupConfig) {
+        $onLookup(deps: [parsed, config]) { (info) in
+            guard let parsed else { return }
+            result = parsed.makeLookupResult(info: info, config: config)
         }
 
         $onLookupClose(deps: []) {
@@ -60,14 +60,13 @@ internal indirect enum LookupNameDisplay<NodeID: Hashable>: Hashable {
     case equivalentNames([LookupNameDisplay<NodeID>])
 }
 
-private extension SourceFileScope {
+private extension ParsedSource {
     func makeLookupResult(
         info: ClickPointInfo,
         config: LookupConfig
     ) -> LookupResultData {
         let position = AbsolutePosition(utf8Offset: info.utf8Offset)
         let identifier = config.name.asLookupIdentifier
-        let converter = SourceLocationConverter(fileName: "", tree: syntax.root)
         let location = converter.location(for: position)
         let sourceLocationDescription = "\(location.line):\(location.column)"
         let lexicalConfig = SwiftLexicalLookup.LookupConfig(
@@ -82,7 +81,7 @@ private extension SourceFileScope {
             (originToken?.lookup(identifier, with: lexicalConfig) ?? [])
             .map { $0.toDisplay(converter: converter) }
 
-        let syntaxScopeResults = self.lexicalLookup(
+        let syntaxScopeResults = scope.lexicalLookup(
             position: position,
             name: identifier,
             options: options
@@ -103,7 +102,7 @@ private extension SourceFileScope {
         let syntaxScopeOriginScopeIds: Set<ObjectIdentifier> = {
             var ids: Set<ObjectIdentifier> = []
             var current: (any SyntaxScopeProtocol)? =
-                self.findStartingScopeForLookup(position: position)
+                scope.findStartingScopeForLookup(position: position)
             while let scope = current {
                 ids.insert(scope.id)
                 current = scope.lookupParent
