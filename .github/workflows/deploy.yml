@@ -16,20 +16,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      SWIFT_VERSION: swift-6.3.1
+      SWIFT_VERSION: 6.3.1
       WASM_SDK_CHECKSUM: bd47baa20771f366d8beed7970afaa30742b2210097afd15f85427226d8f4cf2
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Swift via swiftly
+        run: |
+          curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz && \
+          tar zxf swiftly-$(uname -m).tar.gz && \
+          ./swiftly init --quiet-shell-followup && \
+          . "${SWIFTLY_HOME_DIR:-$HOME/.local/share/swiftly}/env.sh" && \
+          hash -r
+
+          swiftly install ${SWIFT_VERSION}
+          swiftly use ${SWIFT_VERSION}
+
+          echo "${SWIFTLY_BIN_DIR:-$HOME/.local/share/swiftly/bin}" >> $GITHUB_PATH
+
       - name: Install Swift wasm SDK
         run: |
           swift sdk install \
-            https://download.swift.org/${SWIFT_VERSION}-release/wasm-sdk/${SWIFT_VERSION}-RELEASE/${SWIFT_VERSION}-RELEASE_wasm.artifactbundle.tar.gz \
+            https://download.swift.org/swift-${SWIFT_VERSION}-release/wasm-sdk/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE_wasm.artifactbundle.tar.gz \
             --checksum ${WASM_SDK_CHECKSUM}
 
       - name: Build
         env:
-          WASM_SDK: ${{ env.SWIFT_VERSION }}-RELEASE_wasm
+          WASM_SDK: swift-${{ env.SWIFT_VERSION }}-RELEASE_wasm
         run: make build-web
 
       - uses: actions/upload-pages-artifact@v3
