@@ -6,33 +6,41 @@ import SwiftSyntax
 @Suite struct IntroducedNamesTests {
     @Test func sourceFileIsScopeWithNoIntroducedNames() {
         let syntax = Parser.parse(source: "let x = 1")
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
         #expect(syntax.isScope)
-        #expect(syntax.introducedNames.isEmpty)
+        #expect(syntax.introducedNames(converter: converter).isEmpty)
     }
 
     @Test func functionDeclIntroducesParameters() {
         let syntax = Parser.parse(source: "func f(a: Int, b: String) {}")
         let funcDecl = find(in: Syntax(syntax), typeName: "FunctionDeclSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
         #expect(funcDecl.isScope)
-        #expect(funcDecl.introducedNames == ["identifier:a", "identifier:b"])
+        #expect(funcDecl.introducedNames(converter: converter) == ["identifier:a", "identifier:b"])
     }
 
     @Test func codeBlockIntroducesLocalBindings() {
         let syntax = Parser.parse(source: "func f() { let x = 1; let y = 2 }")
         let codeBlock = find(in: Syntax(syntax), typeName: "CodeBlockSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
         #expect(codeBlock.isScope)
-        #expect(codeBlock.introducedNames == ["identifier:x", "identifier:y"])
+        #expect(
+            codeBlock.introducedNames(converter: converter) == [
+                "identifier:x 1:21-", "identifier:y 1:32-",
+            ]
+        )
     }
 
     @Test func nonScopeNodeHasEmptyIntroducedNames() {
         let syntax = Parser.parse(source: "let x = 1")
         let pattern = find(in: Syntax(syntax), typeName: "IdentifierPatternSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
         #expect(!pattern.isScope)
-        #expect(pattern.introducedNames.isEmpty)
+        #expect(pattern.introducedNames(converter: converter).isEmpty)
     }
 
     @Test func variableDeclScopeDoesNotLeakAncestorNames() {
@@ -45,9 +53,10 @@ import SwiftSyntax
                 """
         )
         let varDecl = find(in: Syntax(syntax), typeName: "VariableDeclSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
         #expect(varDecl.isScope)
-        #expect(varDecl.introducedNames.isEmpty)
+        #expect(varDecl.introducedNames(converter: converter).isEmpty)
     }
 
     @Test func codeBlockFoldsGuardLetIntoIntroducedNames() {
@@ -61,8 +70,15 @@ import SwiftSyntax
                 """
         )
         let codeBlock = find(in: Syntax(syntax), typeName: "CodeBlockSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
-        #expect(codeBlock.introducedNames == ["identifier:a", "identifier:b", "identifier:c"])
+        #expect(
+            codeBlock.introducedNames(converter: converter) == [
+                "identifier:a 2:14-",
+                "identifier:b 3:22-",
+                "identifier:c 4:14-",
+            ]
+        )
     }
 
     @Test func guardStmtIntroducesBindingsToParent() {
@@ -75,10 +91,16 @@ import SwiftSyntax
                 """
         )
         let guardStmt = find(in: Syntax(syntax), typeName: "GuardStmtSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
         #expect(guardStmt.isScope)
-        #expect(guardStmt.introducedNames.isEmpty)
-        #expect(guardStmt.introducedNamesToParent == ["x", "y"])
+        #expect(guardStmt.introducedNames(converter: converter).isEmpty)
+        #expect(
+            guardStmt.introducedNamesToParent(converter: converter) == [
+                "identifier:x 2:24-",
+                "identifier:y 2:36-",
+            ]
+        )
     }
 
     @Test func ifConfigDeclIntroducesDeclsToParent() {
@@ -91,16 +113,23 @@ import SwiftSyntax
                 """
         )
         let ifConfig = find(in: Syntax(syntax), typeName: "IfConfigDeclSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
         #expect(ifConfig.isScope)
-        #expect(ifConfig.introducedNamesToParent == ["x", "y"])
+        #expect(
+            ifConfig.introducedNamesToParent(converter: converter) == [
+                "identifier:x 2:10-",
+                "identifier:y 3:10-",
+            ]
+        )
     }
 
     @Test func nonIntroducingNodeHasEmptyIntroducedNamesToParent() {
         let syntax = Parser.parse(source: "func f(a: Int) { let x = 1 }")
         let funcDecl = find(in: Syntax(syntax), typeName: "FunctionDeclSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
-        #expect(funcDecl.introducedNamesToParent.isEmpty)
+        #expect(funcDecl.introducedNamesToParent(converter: converter).isEmpty)
     }
 
     @Test func ifExprWithoutElseIntroducesOptionalBinding() {
@@ -114,8 +143,11 @@ import SwiftSyntax
                 """
         )
         let ifExpr = find(in: Syntax(syntax), typeName: "IfExprSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
-        #expect(ifExpr.introducedNames.contains("identifier:a"))
+        #expect(
+            ifExpr.introducedNames(converter: converter).contains { $0.hasPrefix("identifier:a ") }
+        )
     }
 
     @Test func ifExprWithElseIfIntroducesOuterOptionalBinding() {
@@ -131,8 +163,11 @@ import SwiftSyntax
                 """
         )
         let outerIf = find(in: Syntax(syntax), typeName: "IfExprSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
-        #expect(outerIf.introducedNames.contains("identifier:a"))
+        #expect(
+            outerIf.introducedNames(converter: converter).contains { $0.hasPrefix("identifier:a ") }
+        )
     }
 
     @Test func ifExprWithPlainElseIntroducesOptionalBinding() {
@@ -148,8 +183,11 @@ import SwiftSyntax
                 """
         )
         let ifExpr = find(in: Syntax(syntax), typeName: "IfExprSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
-        #expect(ifExpr.introducedNames.contains("identifier:a"))
+        #expect(
+            ifExpr.introducedNames(converter: converter).contains { $0.hasPrefix("identifier:a ") }
+        )
     }
 
     @Test func ifExprWithElseIntroducesMultipleOptionalBindings() {
@@ -165,9 +203,14 @@ import SwiftSyntax
                 """
         )
         let ifExpr = find(in: Syntax(syntax), typeName: "IfExprSyntax")!
+        let converter = SourceLocationConverter(fileName: "", tree: syntax)
 
-        #expect(ifExpr.introducedNames.contains("identifier:a"))
-        #expect(ifExpr.introducedNames.contains("identifier:b"))
+        #expect(
+            ifExpr.introducedNames(converter: converter).contains { $0.hasPrefix("identifier:a ") }
+        )
+        #expect(
+            ifExpr.introducedNames(converter: converter).contains { $0.hasPrefix("identifier:b ") }
+        )
     }
 }
 

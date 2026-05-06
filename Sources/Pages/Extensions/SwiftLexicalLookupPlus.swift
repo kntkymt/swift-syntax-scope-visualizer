@@ -34,6 +34,28 @@ internal extension LookupName {
     var displayDescription: String {
         "\(kindLabel):\(identifier.name)"
     }
+
+    func displayDescription(converter: SourceLocationConverter) -> String {
+        if case .identifier(_, let accessibleAfter) = self, let accessibleAfter {
+            let location = converter.location(for: accessibleAfter)
+            return "\(displayDescription) \(location.line):\(location.column)-"
+        }
+
+        return displayDescription
+    }
+
+    // Avoids `LookupName.identifier`'s `Identifier(_:)!` force-unwrap so e.g.
+    // operator decls (whose `name` token is not an identifier token) don't crash.
+    var nameText: String? {
+        switch self {
+        case .identifier(let syntax, _):
+            return syntax.as(IdentifierPatternSyntax.self)?.identifier.text
+        case .declaration(let syntax):
+            return (syntax.asProtocol(SyntaxProtocol.self) as? NamedDeclSyntax)?.name.text
+        case .implicit, .equivalentNames:
+            return nil
+        }
+    }
 }
 
 internal extension SyntaxProtocol {
@@ -94,54 +116,73 @@ private extension Syntax {
 // are SwiftLexicalLookup-internal, so we replicate the logic here for the only two
 // conforming types: `GuardStmtSyntax` and `IfConfigDeclSyntax`.
 internal extension Syntax {
-    var introducedNameTextsToParent: [String] {
+    var introducedLookupNamesToParent: [LookupName] {
         if let guardStmt = self.as(GuardStmtSyntax.self) {
             return guardStmt.conditions.flatMap { (element) in
-                Syntax(element.condition).introducedNameTexts
+                Syntax(element.condition).introducedLookupNames(
+                    accessibleAfter: element.endPosition
+                )
             }
         }
 
         if let ifConfigDecl = self.as(IfConfigDeclSyntax.self) {
             return ifConfigDecl.clauses.flatMap { (clause) in
-                clause.elementSyntaxes.flatMap(\.introducedNameTexts)
+                clause.elementSyntaxes.flatMap { (element) in
+                    element.introducedLookupNames(accessibleAfter: element.endPosition)
+                }
             }
         }
 
         return []
     }
 
-    var introducedNameTexts: [String] {
+    func introducedLookupNames(accessibleAfter: AbsolutePosition? = nil) -> [LookupName] {
         switch self.as(SyntaxEnum.self) {
         case .identifierPattern(let pattern):
             guard pattern.identifier.tokenKind != .wildcard else { return [] }
-            return [pattern.identifier.text]
+            return [.identifier(Syntax(pattern), accessibleAfter: accessibleAfter)]
         case .variableDecl(let decl):
-            return decl.bindings.flatMap { Syntax($0.pattern).introducedNameTexts }
+            return decl.bindings.flatMap { (binding) in
+                Syntax(binding.pattern).introducedLookupNames(
+                    accessibleAfter: accessibleAfter != nil
+                        ? binding.endPositionBeforeTrailingTrivia : nil
+                )
+            }
         case .tuplePattern(let pattern):
-            return pattern.elements.flatMap { Syntax($0.pattern).introducedNameTexts }
+            return pattern.elements.flatMap {
+                Syntax($0.pattern).introducedLookupNames(accessibleAfter: accessibleAfter)
+            }
         case .tupleExpr(let expr):
-            return expr.elements.flatMap { Syntax($0).introducedNameTexts }
+            return expr.elements.flatMap {
+                Syntax($0).introducedLookupNames(accessibleAfter: accessibleAfter)
+            }
         case .labeledExpr(let expr):
-            return Syntax(expr.expression).introducedNameTexts
+            return Syntax(expr.expression).introducedLookupNames(accessibleAfter: accessibleAfter)
         case .valueBindingPattern(let pattern):
-            return Syntax(pattern.pattern).introducedNameTexts
+            return Syntax(pattern.pattern).introducedLookupNames(accessibleAfter: accessibleAfter)
         case .expressionPattern(let pattern):
-            return Syntax(pattern.expression).introducedNameTexts
+            return Syntax(pattern.expression).introducedLookupNames(
+                accessibleAfter: accessibleAfter
+            )
         case .sequenceExpr(let expr):
-            return expr.elements.flatMap { Syntax($0).introducedNameTexts }
+            return expr.elements.flatMap {
+                Syntax($0).introducedLookupNames(accessibleAfter: accessibleAfter)
+            }
         case .patternExpr(let expr):
-            return Syntax(expr.pattern).introducedNameTexts
+            return Syntax(expr.pattern).introducedLookupNames(accessibleAfter: accessibleAfter)
         case .optionalBindingCondition(let condition):
-            return Syntax(condition.pattern).introducedNameTexts
+            return Syntax(condition.pattern).introducedLookupNames(accessibleAfter: accessibleAfter)
         case .matchingPatternCondition(let condition):
-            return Syntax(condition.pattern).introducedNameTexts
+            return Syntax(condition.pattern).introducedLookupNames(accessibleAfter: accessibleAfter)
         case .functionCallExpr(let expr):
-            return expr.arguments.flatMap { Syntax($0.expression).introducedNameTexts }
+            return expr.arguments.flatMap {
+                Syntax($0.expression).introducedLookupNames(accessibleAfter: accessibleAfter)
+            }
         case .optionalChainingExpr(let expr):
-            return Syntax(expr.expression).introducedNameTexts
+            return Syntax(expr.expression).introducedLookupNames(accessibleAfter: accessibleAfter)
         default:
             if let named = self.asProtocol(SyntaxProtocol.self) as? NamedDeclSyntax {
-                return [named.name.text]
+                return [.declaration(Syntax(named))]
             }
             return []
         }

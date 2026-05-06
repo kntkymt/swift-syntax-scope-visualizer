@@ -101,8 +101,8 @@ private struct SyntaxTreeNodeRowView: Component {
     func render() -> Node {
         let scope = Syntax(node).asProtocol(SyntaxProtocol.self) as? ScopeSyntax
         let typeColor = node.isScope ? Color.red : Color.blue
-        let introducedNames = node.introducedNames
-        let introducedNamesToParent = node.introducedNamesToParent
+        let introducedNames = node.introducedNames(converter: converter)
+        let introducedNamesToParent = node.introducedNamesToParent(converter: converter)
         let declNames = node.declNames
 
         return Fragment {
@@ -170,15 +170,19 @@ internal extension SyntaxProtocol {
         Syntax(self).asProtocol(SyntaxProtocol.self) is ScopeSyntax
     }
 
-    var introducedNames: [String] {
+    func introducedNames(converter: SourceLocationConverter) -> [String] {
         guard
             let scope = Syntax(self).asProtocol(SyntaxProtocol.self) as? ScopeSyntax
         else { return [] }
-        return scope.lookupAtScopeEnd().flatMap(\.flattened).map(\.displayDescription)
+        return scope.lookupAtScopeEnd().flatMap(\.flattened).map {
+            $0.displayDescription(converter: converter)
+        }
     }
 
-    var introducedNamesToParent: [String] {
-        Syntax(self).introducedNameTextsToParent
+    func introducedNamesToParent(converter: SourceLocationConverter) -> [String] {
+        Syntax(self).introducedLookupNamesToParent.flatMap(\.flattened).map {
+            $0.displayDescription(converter: converter)
+        }
     }
 
     // Lift scope descendants of hidden non-scope children up to this level so the

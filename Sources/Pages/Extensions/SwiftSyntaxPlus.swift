@@ -1,4 +1,5 @@
 import SwiftSyntax
+@_spi(Experimental) import SwiftLexicalLookup
 
 internal extension SyntaxProtocol {
     var declNames: [String] {
@@ -8,7 +9,7 @@ internal extension SyntaxProtocol {
             return [identifierType.name.text]
         }
 
-        return Syntax(self).introducedNameTexts
+        return Syntax(self).introducedLookupNames().flatMap(\.flattened).compactMap(\.nameText)
     }
 }
 
