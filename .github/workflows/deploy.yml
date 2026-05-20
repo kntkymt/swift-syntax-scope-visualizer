@@ -21,11 +21,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install dependency tool
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+
       - name: Install Swift via swiftly
         run: |
           curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz && \
           tar zxf swiftly-$(uname -m).tar.gz && \
-          ./swiftly init --quiet-shell-followup && \
+          ./swiftly init --quiet-shell-followup --skip-install && \
           . "${SWIFTLY_HOME_DIR:-$HOME/.local/share/swiftly}/env.sh" && \
           hash -r
 
