@@ -2,14 +2,14 @@ enum Constant {
     static let initialSourceCode = """
         func f() {
             let a = 1
-            if let b = value() {
-                let c = 3
+            if let a = Optional(2) {
+                print(a)
             }
-
-            guard let d = value() else {
-                let e = 4
+            guard let a = Optional(3) else {
+                print(a)
+                return
             }
-            let f = 5
+            print(a)
         }
         """
 
