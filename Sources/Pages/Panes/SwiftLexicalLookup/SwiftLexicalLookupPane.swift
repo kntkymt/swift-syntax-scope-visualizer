@@ -10,6 +10,7 @@ internal struct SwiftLexicalLookupPane: Component {
     let onUpdateHighlightedSourceCodeRange: Function<Void, Range<AbsolutePosition>?>
 
     @BindableState var config: VisibleNodeConfig = .default
+    @BindableState var isCollapsed: Bool = false
 
     var deps: Deps? {
         [
@@ -21,9 +22,25 @@ internal struct SwiftLexicalLookupPane: Component {
     }
 
     func render() -> Node {
-        Pane(
+        if isCollapsed {
+            return CollapsedSwiftLexicalLookupPane(isCollapsed: $isCollapsed)
+        }
+
+        return Pane(
             header: {
-                h4(style: .init().margin("0")) { "Swift Lexical Lookup" }
+                div(
+                    style: .init()
+                        .display("flex")
+                        .flexDirection("row")
+                        .alignItems("center")
+                        .gap("8px")
+                ) {
+                    Button(onClick: Function { isCollapsed = true }) {
+                        "→"
+                    }
+
+                    h4(style: .init().margin("0")) { "Swift Lexical Lookup" }
+                }
 
                 SettingsButton(config: $config)
             },
@@ -38,6 +55,61 @@ internal struct SwiftLexicalLookupPane: Component {
                         highlights: highlights,
                         onUpdateHighlightedSourceCodeRange: onUpdateHighlightedSourceCodeRange
                     )
+                }
+            }
+        }
+    }
+}
+
+private struct CollapsedSwiftLexicalLookupPane: Component {
+    @Binding var isCollapsed: Bool
+
+    var deps: Deps? {
+        [_isCollapsed]
+    }
+
+    func render() -> Node {
+        div(
+            style: .init()
+                .flex("0 0 auto")
+                .width("44px")
+                .height("100%")
+                .display("flex")
+                .flexDirection("column")
+                .boxSizing("border-box")
+                .borderRight("1px solid #ddd")
+                .fontFamily("system-ui, -apple-system, BlinkMacSystemFont, sans-serif")
+        ) {
+            div(
+                style: .init()
+                    .height("44px")
+                    .flexShrink("0")
+                    .boxSizing("border-box")
+                    .borderBottom("1px solid #ddd")
+                    .backgroundColor("#f5f5f5")
+                    .display("flex")
+                    .alignItems("center")
+                    .justifyContent("center")
+            ) {
+                Button(onClick: Function { isCollapsed = false }) {
+                    "←"
+                }
+            }
+
+            div(
+                style: .init()
+                    .flex("1 1 0")
+                    .display("flex")
+                    .alignItems("center")
+                    .justifyContent("center")
+                    .padding("8px 0")
+            ) {
+                span(
+                    style: .init()
+                        .writingMode("vertical-rl")
+                        .whiteSpace("nowrap")
+                ) {
+                    "Swift Lexical Lookup"
                 }
             }
         }
